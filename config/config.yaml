@@ -1,0 +1,12 @@
+defaults: &defaults
+  addr: localhost:5000
+  sql:
+    host: localhost:8286
+    db: pmsauth
+    user: root
+  token:
+    access_ttl: 720h
+    refresh_ttl: 4464h # 6 month
+  env:
+    # Secrets
+    AUTH_SQL_PASSWORD: password

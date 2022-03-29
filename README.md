@@ -1,2 +1,1 @@
-# auth
-Authorization Service
+# Authorization Service

@@ -1,0 +1,94 @@
+syntax = "proto3";
+package auth;
+option go_package = ".;auth";
+
+service AuthService {
+    rpc ChangePassword (ChangePasswordRequest) returns (ChangePasswordResponse) {}
+    rpc Authorize (AuthorizeRequest) returns (TokenResponse) {}
+    rpc RefreshTokens (RefreshTokensRequest) returns (TokenResponse) {}
+    rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse) {}
+}
+
+service ManageService {
+    rpc CreateUser (CreateUserRequest) returns (CreateUserResponse) {}
+    rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse) {}
+    rpc GetUserList (GetUserListRequest) returns (GetUserListResponse) {}
+}
+
+message ChangePasswordRequest {
+    string token = 1;
+    string new_password = 2;
+}
+
+message ChangePasswordResponse {
+    bool changed = 1;
+}
+
+message AuthorizeRequest {
+    string login = 1;
+    string password = 2;
+}
+
+message RefreshTokensRequest {
+    string refresh_token = 1;
+}
+
+message ValidateTokenRequest {
+    string token = 1;
+}
+
+message ValidateTokenResponse {
+    bool valid = 1;
+}
+
+message TokenResponse {
+    Token access = 1;
+    Token refresh = 2;
+}
+
+message CreateUserRequest {
+    string login = 1;
+    string password = 2;
+}
+
+message CreateUserResponse {
+    int64 id = 1;
+}
+
+message DeleteUserRequest {
+    int64 id = 1;
+}
+
+message DeleteUserResponse {
+    bool deleted = 1;
+}
+
+message GetUserListRequest {
+    enum Order {
+        CREATED_ASC = 0;
+        CREATED_DESC = 1;
+        UUID_ASC = 2;
+        UUID_DESC = 3;
+    }
+    int64 id = 1;
+    string login = 2;
+    Order order = 3;
+    int32 page = 4;
+    int32 page_size = 5;
+}
+
+message GetUserListResponse {
+    repeated User users = 1;
+}
+
+message Token {
+    string token = 1;
+    int32 expires_in = 2;
+}
+
+message User {
+    int64 id = 1;
+    string login = 2;
+    string created = 3;
+    string updated = 4;
+}
