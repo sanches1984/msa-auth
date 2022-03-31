@@ -1,7 +1,9 @@
 package app
 
 import (
+	"database/sql"
 	"github.com/rs/zerolog"
+	"github.com/sanches1984/auth/app/factory"
 	"github.com/sanches1984/auth/app/service"
 	api "github.com/sanches1984/auth/proto/api"
 	"google.golang.org/grpc"
@@ -9,11 +11,12 @@ import (
 )
 
 type App struct {
+	db     *sql.DB
 	logger zerolog.Logger
 }
 
-func New(logger zerolog.Logger) *App {
-	return &App{logger: logger}
+func New(db *sql.DB, logger zerolog.Logger) *App {
+	return &App{db: db, logger: logger}
 }
 
 func (a *App) Serve(addr string) error {
@@ -22,12 +25,12 @@ func (a *App) Serve(addr string) error {
 		return err
 	}
 
-	// todo db
+	factoryService := factory.New(a.db)
 
 	s := grpc.NewServer()
-	api.RegisterAuthServiceServer(s, service.NewAuthService(a.logger))
-	api.RegisterManageServiceServer(s, service.NewManageService(a.logger))
+	api.RegisterAuthServiceServer(s, service.NewAuthService(factoryService, a.logger))
+	api.RegisterManageServiceServer(s, service.NewManageService(factoryService, a.logger))
 
-	a.logger.Info().Msg("auth service started")
+	a.logger.Debug().Msg("auth service started")
 	return s.Serve(conn)
 }

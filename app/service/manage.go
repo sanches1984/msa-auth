@@ -9,11 +9,15 @@ import (
 type ManageService struct {
 	api.ManageServiceServer
 
-	logger zerolog.Logger
+	factory Factory
+	logger  zerolog.Logger
 }
 
-func NewManageService(logger zerolog.Logger) *ManageService {
-	return &ManageService{logger: logger}
+func NewManageService(factory Factory, logger zerolog.Logger) *ManageService {
+	return &ManageService{
+		factory: factory,
+		logger:  logger,
+	}
 }
 
 func (s *ManageService) CreateUser(ctx context.Context, r *api.CreateUserRequest) (*api.CreateUserResponse, error) {

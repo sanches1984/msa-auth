@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "uindex_users_login" ON "users" ("login") WHERE "deleted" is null;

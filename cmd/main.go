@@ -2,20 +2,31 @@ package main
 
 import (
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/sanches1984/auth/app"
+	"github.com/sanches1984/auth/app/resources"
 	"github.com/sanches1984/auth/config"
+	"os"
 )
 
-const addr = "localhost:5000"
-
 func main() {
-	logger := zerolog.Logger{}.With().Str("service", "auth").Logger()
+	logger := log.Output(zerolog.ConsoleWriter{Out: os.Stderr}).With().Timestamp().Logger()
 
 	if err := config.Load(); err != nil {
 		logger.Fatal().Err(err).Msg("config load error")
 	}
 
-	if err := app.New(logger).Serve(addr); err != nil {
+	db, err := resources.InitDatabase(logger)
+	if db != nil {
+		defer db.Close()
+	}
+	if err != nil {
+		logger.Fatal().Err(err).Msg("db init error")
+	}
+
+	logger.Info().Str("addr", config.Addr()).Msg("listen")
+
+	if err := app.New(db, logger).Serve(config.Addr()); err != nil {
 		logger.Fatal().Err(err).Msg("auth service error")
 	}
 }

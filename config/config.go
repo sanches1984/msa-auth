@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"github.com/go-yaml/yaml"
-	logger "github.com/sanches1984/gopkg-logger"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -53,7 +52,7 @@ func Env() string {
 
 	env, exists := os.LookupEnv("AUTH_ENV")
 	if exists != true {
-		env = "development"
+		env = "default"
 	}
 
 	return env
@@ -63,7 +62,9 @@ func Load() error {
 	if err := loadYaml(); err != nil {
 		return err
 	}
-	loadEnv()
+	if err := loadEnv(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -114,27 +115,34 @@ func loadYaml() error {
 	return nil
 }
 
-func loadEnv() {
-	config.secrets.SQLPassword = getEnv("AUTH_SQL_PASSWORD")
+func loadEnv() error {
+	var err error
+	config.secrets.SQLPassword, err = getEnv("AUTH_SQL_PASSWORD")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func getEnv(v string, defaultValue ...string) string {
+func getEnv(v string, defaultValue ...string) (string, error) {
 	// from yaml config
 	if len(config.env[Env()].Env) > 0 {
 		if env, ok := config.env[Env()].Env[v]; ok {
-			return env
+			return env, nil
 		}
 	}
 	// from environment variable
 	env, exists := os.LookupEnv(v)
 	if exists != true {
 		if len(defaultValue) != 0 {
-			return defaultValue[0]
+			return defaultValue[0], nil
 		}
-		logger.Error(logger.App, "Unable to find env var: %s", v)
+
+		return "", fmt.Errorf("unable to find env var: %s", v)
 	}
 
-	return env
+	return env, nil
 }
 
 func getRootPath() string {

@@ -1,8 +1,8 @@
-defaults: &defaults
+default: &default
   addr: localhost:5000
   sql:
-    host: localhost:8286
-    db: pmsauth
+    host: localhost:8111
+    db: auth
     user: root
   token:
     access_ttl: 720h

@@ -1,0 +1,1 @@
+DROP INDEX "uindex_users_login";
