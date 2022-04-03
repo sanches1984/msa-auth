@@ -18,6 +18,7 @@ var env string
 type envConfig struct {
 	Addr  string            `yaml:"addr"`
 	SQL   SQLConfig         `yaml:"sql"`
+	Redis RedisConfig       `yaml:"redis"`
 	Token TokenConfig       `yaml:"token"`
 	Env   map[string]string `yaml:"env"`
 }
@@ -29,14 +30,21 @@ type SQLConfig struct {
 	Pool int    `yaml:"pool"`
 }
 
+type RedisConfig struct {
+	Host              string        `yaml:"host"`
+	Db                int           `yaml:"db"`
+	ConnectionTimeout time.Duration `yaml:"conn_timeout"`
+	OperationTimeout  time.Duration `yaml:"oper_timeout"`
+}
+
 type TokenConfig struct {
 	AccessTTL  time.Duration `yaml:"access_ttl"`
 	RefreshTTL time.Duration `yaml:"refresh_ttl"`
 }
 
-// Secrets from ENV
 type SecretsConfig struct {
-	SQLPassword string
+	SQLPassword   string
+	RedisPassword string
 }
 
 type appConfig struct {
@@ -80,7 +88,6 @@ func RefreshTokenTTL() time.Duration {
 	return config.env[Env()].Token.RefreshTTL
 }
 
-// Get configuration (by current env)
 func SQLDSN(noDb ...bool) string {
 	if len(noDb) == 1 && noDb[0] == true {
 		return "postgres://" + url.QueryEscape(config.env[Env()].SQL.User) + ":" + url.QueryEscape(config.secrets.SQLPassword) +
@@ -121,7 +128,10 @@ func loadEnv() error {
 	if err != nil {
 		return err
 	}
-
+	config.secrets.RedisPassword, err = getEnv("AUTH_REDIS_PASSWORD")
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -156,7 +166,7 @@ func getRootPath() string {
 			return dir
 		}
 	}
-	panic("Root path not found")
+	panic("root path not found")
 }
 
 func getConfigPath(name string) string {

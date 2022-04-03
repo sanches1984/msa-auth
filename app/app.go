@@ -3,7 +3,7 @@ package app
 import (
 	"database/sql"
 	"github.com/rs/zerolog"
-	"github.com/sanches1984/auth/app/factory"
+	"github.com/sanches1984/auth/app/repository"
 	"github.com/sanches1984/auth/app/service"
 	api "github.com/sanches1984/auth/proto/api"
 	"google.golang.org/grpc"
@@ -25,7 +25,7 @@ func (a *App) Serve(addr string) error {
 		return err
 	}
 
-	factoryService := factory.New(a.db)
+	factoryService := repository.New(a.db)
 
 	s := grpc.NewServer()
 	api.RegisterAuthServiceServer(s, service.NewAuthService(factoryService, a.logger))

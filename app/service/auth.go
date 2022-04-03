@@ -9,21 +9,21 @@ import (
 type AuthService struct {
 	api.AuthServiceServer
 
-	factory Factory
-	logger  zerolog.Logger
+	repo   Repository
+	logger zerolog.Logger
 }
 
-func NewAuthService(factory Factory, logger zerolog.Logger) *AuthService {
+func NewAuthService(factory Repository, logger zerolog.Logger) *AuthService {
 	return &AuthService{
-		factory: factory,
-		logger:  logger,
+		repo:   factory,
+		logger: logger,
 	}
 }
 
 func (s *AuthService) ChangePassword(ctx context.Context, r *api.ChangePasswordRequest) (*api.ChangePasswordResponse, error) {
 	// todo redis
 
-	err := s.factory.UpdateUserPassword(ctx, 0, r.NewPassword)
+	err := s.repo.UpdateUserPassword(ctx, 0, r.NewPassword)
 	if err != nil {
 		s.logger.Error().Err(err).Int64("id", 0).Msg("can't change user password")
 		return nil, err

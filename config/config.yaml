@@ -4,9 +4,15 @@ default: &default
     host: localhost:8111
     db: auth
     user: root
+  redis:
+    host: localhost:8112
+    db: 0
+    conn_timeout: 10s
+    oper_timeout: 3s
   token:
     access_ttl: 720h
     refresh_ttl: 4464h # 6 month
   env:
     # Secrets
     AUTH_SQL_PASSWORD: password
+    AUTH_REDIS:PASSWORD: password

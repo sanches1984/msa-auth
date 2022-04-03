@@ -9,11 +9,11 @@ import (
 type ManageService struct {
 	api.ManageServiceServer
 
-	factory Factory
+	factory Repository
 	logger  zerolog.Logger
 }
 
-func NewManageService(factory Factory, logger zerolog.Logger) *ManageService {
+func NewManageService(factory Repository, logger zerolog.Logger) *ManageService {
 	return &ManageService{
 		factory: factory,
 		logger:  logger,
