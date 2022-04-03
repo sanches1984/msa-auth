@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/containerd/containerd v1.6.2 // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/docker/docker v20.10.14+incompatible // indirect
 	github.com/go-yaml/yaml v2.1.0+incompatible

@@ -45,6 +45,7 @@ type TokenConfig struct {
 type SecretsConfig struct {
 	SQLPassword   string
 	RedisPassword string
+	JwtSecret     string
 }
 
 type appConfig struct {
@@ -88,6 +89,10 @@ func RefreshTokenTTL() time.Duration {
 	return config.env[Env()].Token.RefreshTTL
 }
 
+func Redis() RedisConfig {
+	return config.env[Env()].Redis
+}
+
 func SQLDSN(noDb ...bool) string {
 	if len(noDb) == 1 && noDb[0] == true {
 		return "postgres://" + url.QueryEscape(config.env[Env()].SQL.User) + ":" + url.QueryEscape(config.secrets.SQLPassword) +
@@ -97,6 +102,10 @@ func SQLDSN(noDb ...bool) string {
 	return "postgres://" + url.QueryEscape(config.env[Env()].SQL.User) + ":" + url.QueryEscape(config.secrets.SQLPassword) +
 		"@" + config.env[Env()].SQL.Host + "/" + config.env[Env()].SQL.Db +
 		"?sslmode=disable"
+}
+
+func Secrets() SecretsConfig {
+	return config.secrets
 }
 
 func loadYaml() error {
@@ -129,6 +138,10 @@ func loadEnv() error {
 		return err
 	}
 	config.secrets.RedisPassword, err = getEnv("AUTH_REDIS_PASSWORD")
+	if err != nil {
+		return err
+	}
+	config.secrets.JwtSecret, err = getEnv("AUTH_JWT_SECRET")
 	if err != nil {
 		return err
 	}

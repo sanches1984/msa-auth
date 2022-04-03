@@ -9,15 +9,37 @@ import (
 type AuthService struct {
 	api.AuthServiceServer
 
-	repo   Repository
-	logger zerolog.Logger
+	repo    Repository
+	storage Storage
+	logger  zerolog.Logger
 }
 
-func NewAuthService(factory Repository, logger zerolog.Logger) *AuthService {
+func NewAuthService(repo Repository, storage Storage, logger zerolog.Logger) *AuthService {
 	return &AuthService{
-		repo:   factory,
-		logger: logger,
+		repo:    repo,
+		storage: storage,
+		logger:  logger,
 	}
+}
+
+func (s *AuthService) Login(ctx context.Context, r *api.LoginRequest) (*api.TokenResponse, error) {
+	// todo
+	return &api.TokenResponse{
+		SessionId: 0,
+		Access: &api.Token{
+			Token:     r.Login,
+			ExpiresIn: 0,
+		},
+		Refresh: &api.Token{
+			Token:     r.Password,
+			ExpiresIn: 0,
+		},
+	}, nil
+}
+
+func (s *AuthService) Logout(ctx context.Context, r *api.LogoutRequest) (*api.LogoutResponse, error) {
+	// todo
+	return &api.LogoutResponse{SessionId: 0}, nil
 }
 
 func (s *AuthService) ChangePassword(ctx context.Context, r *api.ChangePasswordRequest) (*api.ChangePasswordResponse, error) {
@@ -31,20 +53,6 @@ func (s *AuthService) ChangePassword(ctx context.Context, r *api.ChangePasswordR
 
 	s.logger.Debug().Int64("id", 0).Msg("password changed")
 	return &api.ChangePasswordResponse{Changed: true}, nil
-}
-
-func (s *AuthService) Authorize(ctx context.Context, r *api.AuthorizeRequest) (*api.TokenResponse, error) {
-	// todo
-	return &api.TokenResponse{
-		Access: &api.Token{
-			Token:     r.Login,
-			ExpiresIn: 0,
-		},
-		Refresh: &api.Token{
-			Token:     r.Password,
-			ExpiresIn: 0,
-		},
-	}, nil
 }
 
 func (s *AuthService) RefreshTokens(ctx context.Context, r *api.RefreshTokensRequest) (*api.TokenResponse, error) {

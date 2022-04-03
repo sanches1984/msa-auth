@@ -16,3 +16,4 @@ default: &default
     # Secrets
     AUTH_SQL_PASSWORD: password
     AUTH_REDIS:PASSWORD: password
+    AUTH_JWT_SECRET: secret

@@ -9,13 +9,15 @@ import (
 type ManageService struct {
 	api.ManageServiceServer
 
-	factory Repository
+	repo    Repository
+	storage Storage
 	logger  zerolog.Logger
 }
 
-func NewManageService(factory Repository, logger zerolog.Logger) *ManageService {
+func NewManageService(repo Repository, storage Storage, logger zerolog.Logger) *ManageService {
 	return &ManageService{
-		factory: factory,
+		repo:    repo,
+		storage: storage,
 		logger:  logger,
 	}
 }
@@ -27,7 +29,7 @@ func (s *ManageService) CreateUser(ctx context.Context, r *api.CreateUserRequest
 
 func (s *ManageService) DeleteUser(ctx context.Context, r *api.DeleteUserRequest) (*api.DeleteUserResponse, error) {
 	// todo
-	return &api.DeleteUserResponse{Deleted: true}, nil
+	return &api.DeleteUserResponse{SessionId: []int64{}}, nil
 }
 
 func (s *ManageService) GetUserList(ctx context.Context, r *api.GetUserListRequest) (*api.GetUserListResponse, error) {

@@ -3,8 +3,9 @@ package auth;
 option go_package = ".;auth";
 
 service AuthService {
+    rpc Login (LoginRequest) returns (TokenResponse) {}
+    rpc Logout (LogoutRequest) returns (LogoutResponse) {}
     rpc ChangePassword (ChangePasswordRequest) returns (ChangePasswordResponse) {}
-    rpc Authorize (AuthorizeRequest) returns (TokenResponse) {}
     rpc RefreshTokens (RefreshTokensRequest) returns (TokenResponse) {}
     rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse) {}
 }
@@ -24,9 +25,17 @@ message ChangePasswordResponse {
     bool changed = 1;
 }
 
-message AuthorizeRequest {
+message LoginRequest {
     string login = 1;
     string password = 2;
+}
+
+message LogoutRequest {
+    string token = 1;
+}
+
+message LogoutResponse {
+    int64 session_id = 1;
 }
 
 message RefreshTokensRequest {
@@ -42,8 +51,9 @@ message ValidateTokenResponse {
 }
 
 message TokenResponse {
-    Token access = 1;
-    Token refresh = 2;
+    int64 session_id = 1;
+    Token access = 2;
+    Token refresh = 3;
 }
 
 message CreateUserRequest {
@@ -60,7 +70,7 @@ message DeleteUserRequest {
 }
 
 message DeleteUserResponse {
-    bool deleted = 1;
+    repeated int64 session_id = 1;
 }
 
 message GetUserListRequest {
