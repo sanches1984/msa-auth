@@ -13,7 +13,9 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/rs/zerolog v1.26.1
+	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.7.0
+	golang.org/x/crypto v0.0.0-20211215165025-cf75a172585e
 	google.golang.org/grpc v1.45.0
 	google.golang.org/protobuf v1.28.0
 )

@@ -29,7 +29,7 @@ func (s *ManageService) CreateUser(ctx context.Context, r *api.CreateUserRequest
 
 func (s *ManageService) DeleteUser(ctx context.Context, r *api.DeleteUserRequest) (*api.DeleteUserResponse, error) {
 	// todo
-	return &api.DeleteUserResponse{SessionId: []int64{}}, nil
+	return &api.DeleteUserResponse{SessionId: []string{}}, nil
 }
 
 func (s *ManageService) GetUserList(ctx context.Context, r *api.GetUserListRequest) (*api.GetUserListResponse, error) {

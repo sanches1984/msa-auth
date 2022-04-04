@@ -28,6 +28,7 @@ message ChangePasswordResponse {
 message LoginRequest {
     string login = 1;
     string password = 2;
+    bytes data = 3;
 }
 
 message LogoutRequest {
@@ -35,7 +36,7 @@ message LogoutRequest {
 }
 
 message LogoutResponse {
-    int64 session_id = 1;
+    string session_id = 1;
 }
 
 message RefreshTokensRequest {
@@ -51,7 +52,7 @@ message ValidateTokenResponse {
 }
 
 message TokenResponse {
-    int64 session_id = 1;
+    string session_id = 1;
     Token access = 2;
     Token refresh = 3;
 }
@@ -70,7 +71,7 @@ message DeleteUserRequest {
 }
 
 message DeleteUserResponse {
-    repeated int64 session_id = 1;
+    repeated string session_id = 1;
 }
 
 message GetUserListRequest {

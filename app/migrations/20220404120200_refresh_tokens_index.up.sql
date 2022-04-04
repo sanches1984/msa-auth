@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "uindex_refresh_tokens_user_session" ON "refresh_tokens" ("user_id", "session_id");

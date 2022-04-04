@@ -15,5 +15,5 @@ default: &default
   env:
     # Secrets
     AUTH_SQL_PASSWORD: password
-    AUTH_REDIS:PASSWORD: password
+    AUTH_REDIS_PASSWORD:
     AUTH_JWT_SECRET: secret

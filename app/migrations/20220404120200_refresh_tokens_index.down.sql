@@ -1,0 +1,1 @@
+DROP INDEX "uindex_refresh_tokens_user_session";

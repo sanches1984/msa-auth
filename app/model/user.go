@@ -1,9 +1,12 @@
 package model
 
-import "time"
+import (
+	"golang.org/x/crypto/bcrypt"
+	"time"
+)
 
 type User struct {
-	tableName    struct{}   `sql:"user"`
+	tableName    struct{}   `sql:"users"`
 	ID           int64      `sql:"id,pk"`
 	Login        string     `sql:"login,notnull"`
 	PasswordHash string     `sql:"hash,notnull"`
@@ -12,5 +15,15 @@ type User struct {
 	Deleted      *time.Time `sql:"deleted"`
 }
 
-type UserFilter struct {
+func (u *User) SetHashByPassword(password string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+	u.PasswordHash = string(hash)
+	return nil
+}
+
+func (u *User) IsPasswordCorrect(password string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)) == nil
 }

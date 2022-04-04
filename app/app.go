@@ -41,7 +41,7 @@ func New(logger zerolog.Logger) (*App, error) {
 
 	jwtService := jwt.NewService(config.AccessTokenTTL(), config.RefreshTokenTTL(), config.Secrets().JwtSecret)
 	app.repo = repository.New(app.db)
-	app.storage = storage.New(app.redis, jwtService, logger)
+	app.storage = storage.New(app.redis, jwtService)
 
 	return app, nil
 }
