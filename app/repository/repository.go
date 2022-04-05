@@ -2,91 +2,106 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"github.com/sanches1984/auth/app/model"
+	"github.com/sanches1984/gopkg-pg-orm/pager"
+	"github.com/sanches1984/gopkg-pg-orm/repository/dao"
+	"github.com/sanches1984/gopkg-pg-orm/repository/opt"
 	uuid "github.com/satori/go.uuid"
-	"time"
 )
 
 type Repository struct {
-	db *sql.DB
+	db *dao.DAO
 }
 
-func New(db *sql.DB) *Repository {
-	return &Repository{db: db}
+func New() *Repository {
+	return &Repository{db: dao.New()}
 }
 
-func (f *Repository) GetUserByLogin(ctx context.Context, login string) (*model.User, error) {
-	var user model.User
-	query := "SELECT * FROM users WHERE login = ?"
-	row := f.db.QueryRowContext(ctx, query, login)
-	err := row.Scan(&user)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
-		return nil, err
+func (r *Repository) GetUsers(ctx context.Context, filter model.UserFilter, pgr pager.Pager) (model.UserList, error) {
+	var users []*model.User
+	opts := opt.List()
+	if filter.ID != 0 {
+		opts = append(opts, opt.Eq("id", filter.ID))
+	}
+	if filter.Login != "" {
+		opts = append(opts, opt.Eq("login", filter.Login))
+	}
+	if !filter.ShowDeleted {
+		opts = append(opts, opt.IsNull("deleted"))
+	}
+	if pgr != nil {
+		opts = append(opts, opt.Paging(pgr.GetPage(), pgr.GetPageSize()))
 	}
 
-	return &user, nil
+	opts = append(opts, filter.Order.GetOptFn())
+
+	err := r.db.FindList(ctx, &users, opts)
+	return users, err
 }
 
-func (f *Repository) GetUserByID(ctx context.Context, id int64) (*model.User, error) {
-	var user model.User
-	query := "SELECT * FROM users WHERE id = ?"
-	row := f.db.QueryRowContext(ctx, query, id)
-	err := row.Scan(&user)
+func (r *Repository) GetUser(ctx context.Context, filter model.UserFilter) (*model.User, error) {
+	users, err := r.GetUsers(ctx, filter, nil)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
 		return nil, err
+	} else if len(users) != 1 {
+		return nil, nil
 	}
 
-	return &user, nil
+	return users[0], nil
 }
 
-func (f *Repository) CreateUser(ctx context.Context, user *model.User) (int64, error) {
-	query := "INSERT INTO users(login, password_hash, created, updated) VALUES (?, ?, ?, ?)"
-	err := f.db.QueryRowContext(ctx, query, user.Login, user.PasswordHash, user.Created, user.Updated).Scan(&user.ID)
-	return user.ID, err
+func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {
+	return r.db.Insert(ctx, user)
 }
 
-func (f *Repository) UpdateUserPassword(ctx context.Context, id int64, password string) error {
-	query := "UPDATE users SET password_hash = ? WHERE id = ?"
-	_, err := f.db.ExecContext(ctx, query, password, id)
-	return err
+func (r *Repository) UpdateUserPassword(ctx context.Context, user *model.User) error {
+	return r.db.Update(ctx, user, "password_hash")
 }
 
-func (f *Repository) DeleteUser(ctx context.Context, id int64) error {
-	query := "DELETE FROM refresh_tokens WHERE user_id = ?"
-	if _, err := f.db.ExecContext(ctx, query, id); err != nil {
+func (r *Repository) DeleteUser(ctx context.Context, user *model.User) error {
+	opts := opt.List(opt.Eq("user_id", user.ID))
+	if err := r.db.HardDeleteWhere(ctx, &model.RefreshToken{}, opts); err != nil {
 		return err
 	}
 
-	query = "UPDATE users SET deleted = ? WHERE id = ?"
-	_, err := f.db.ExecContext(ctx, query, time.Now(), id)
-	return err
+	return r.db.SoftDelete(ctx, user)
 }
 
-func (f *Repository) GetRefreshToken(ctx context.Context, userID int64, sessionID uuid.UUID) (*model.RefreshToken, error) {
-	// todo
-	return nil, nil
-}
-
-func (f *Repository) CreateRefreshToken(ctx context.Context, token *model.RefreshToken) error {
-	// todo
-	return nil
-}
-
-func (f *Repository) DeleteRefreshToken(ctx context.Context, userID int64, sessionID uuid.UUID) error {
-	query := "DELETE FROM refresh_tokens WHERE user_id = ?"
-	args := []interface{}{userID}
-	if sessionID != uuid.Nil {
-		query += " AND session_id = ?"
-		args = append(args, sessionID)
+func (r *Repository) GetRefreshTokens(ctx context.Context, filter model.RefreshTokenFilter) (model.RefreshTokenList, error) {
+	var tokens []*model.RefreshToken
+	opts := opt.List()
+	if filter.UserID != 0 {
+		opts = append(opts, opt.Eq("user_id", filter.UserID))
+	}
+	if filter.SessionID != uuid.Nil {
+		opts = append(opts, opt.Eq("session_id", filter.SessionID))
 	}
 
-	_, err := f.db.ExecContext(ctx, query, args)
-	return err
+	err := r.db.FindList(ctx, &tokens, opts)
+	return tokens, err
+}
+
+func (r *Repository) GetRefreshToken(ctx context.Context, filter model.RefreshTokenFilter) (*model.RefreshToken, error) {
+	tokens, err := r.GetRefreshTokens(ctx, filter)
+	if err != nil {
+		return nil, err
+	} else if len(tokens) != 1 {
+		return nil, nil
+	}
+
+	return tokens[0], nil
+}
+
+func (r *Repository) CreateRefreshToken(ctx context.Context, token *model.RefreshToken) error {
+	return r.db.Insert(ctx, token)
+}
+
+func (r *Repository) DeleteRefreshToken(ctx context.Context, filter model.RefreshTokenFilter) error {
+	opts := opt.List()
+	opts = append(opts, opt.Eq("user_id", filter.UserID))
+	if filter.SessionID != uuid.Nil {
+		opts = append(opts, opt.Eq("session_id", filter.SessionID))
+	}
+
+	return r.db.HardDeleteWhere(ctx, &model.RefreshToken{}, opts)
 }

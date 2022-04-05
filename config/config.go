@@ -15,6 +15,8 @@ import (
 var config appConfig
 var env string
 
+const App = "auth"
+
 type envConfig struct {
 	Addr  string            `yaml:"addr"`
 	SQL   SQLConfig         `yaml:"sql"`

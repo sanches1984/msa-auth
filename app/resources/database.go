@@ -1,76 +1,30 @@
 package resources
 
 import (
-	"database/sql"
-	"github.com/golang-migrate/migrate"
-	"github.com/golang-migrate/migrate/database/postgres"
-	_ "github.com/golang-migrate/migrate/source/file"
-	_ "github.com/lib/pq"
+	"github.com/go-pg/pg/v9"
 	"github.com/rs/zerolog"
 	"github.com/sanches1984/auth/config"
+	database "github.com/sanches1984/gopkg-pg-orm"
+	"github.com/sanches1984/gopkg-pg-orm/migrate"
 )
 
-const driverName = "postgres"
-
-func InitDatabase(logger zerolog.Logger) (*sql.DB, error) {
-	db, err := sql.Open(driverName, config.SQLDSN())
+func InitDatabase(logger zerolog.Logger) (database.IClient, error) {
+	dsn := config.SQLDSN()
+	opts, err := pg.ParseURL(dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := db.Ping(); err != nil {
+	db := database.Connect(config.App, opts)
+	if _, err := db.Exec("SELECT 1"); err != nil {
 		return nil, err
 	}
 
-	logger.Info().Str("sqldsn", config.SQLDSN()).Msg("db connected")
+	logger.Info().Str("dsn", dsn).Msg("db connected")
 
-	if err := migrateDatabase(db, logger); err != nil {
+	if err := migrate.NewMigrator("app/migrations", dsn, migrate.WithLogger(logger)).Run(); err != nil {
 		return nil, err
 	}
 
 	return db, nil
-}
-
-func migrateDatabase(db *sql.DB, logger zerolog.Logger) error {
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
-	if err != nil {
-		return err
-	}
-
-	migration, err := migrate.NewWithDatabaseInstance("file://app/migrations", driverName, driver)
-	if err != nil {
-		return err
-	}
-
-	beforeVersion, dirty, err := migration.Version()
-	if err != nil && beforeVersion != 0 {
-		return err
-	}
-
-	logger.Info().Uint("version", beforeVersion).Msg("migration started")
-
-	if dirty {
-		logger.Warn().Msg("previous migration failed")
-	}
-
-	err = migration.Up()
-
-	if err != nil && err != migrate.ErrNoChange {
-		return err
-	} else if err == migrate.ErrNoChange {
-		logger.Info().Msg("no new database changes")
-	}
-
-	afterVersion, dirty, err := migration.Version()
-	if err != nil && beforeVersion != 0 {
-		return err
-	}
-
-	logger.Info().Uint("version", afterVersion).Msg("migration done")
-
-	if dirty {
-		logger.Warn().Msg("previous migration failed")
-	}
-
-	return nil
 }

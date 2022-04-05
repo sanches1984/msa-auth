@@ -1,7 +1,6 @@
 package app
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/sanches1984/auth/app/repository"
@@ -12,12 +11,13 @@ import (
 	"github.com/sanches1984/auth/pkg/jwt"
 	"github.com/sanches1984/auth/pkg/redis"
 	api "github.com/sanches1984/auth/proto/api"
+	database "github.com/sanches1984/gopkg-pg-orm"
 	"google.golang.org/grpc"
 	"net"
 )
 
 type App struct {
-	db    *sql.DB
+	db    database.IClient
 	redis *redis.Client
 
 	repo    Repository
@@ -40,7 +40,7 @@ func New(logger zerolog.Logger) (*App, error) {
 	}
 
 	jwtService := jwt.NewService(config.AccessTokenTTL(), config.RefreshTokenTTL(), config.Secrets().JwtSecret)
-	app.repo = repository.New(app.db)
+	app.repo = repository.New()
 	app.storage = storage.New(app.redis, jwtService)
 
 	return app, nil
@@ -61,7 +61,7 @@ func (a *App) Serve(addr string) error {
 		return err
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(databaseInterceptor(a.db))
 	api.RegisterAuthServiceServer(s, service.NewAuthService(a.repo, a.storage, a.logger))
 	api.RegisterManageServiceServer(s, service.NewManageService(a.repo, a.storage, a.logger))
 

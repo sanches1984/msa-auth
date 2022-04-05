@@ -3,16 +3,12 @@ module github.com/sanches1984/auth
 go 1.16
 
 require (
-	github.com/containerd/containerd v1.6.2 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/docker v20.10.14+incompatible // indirect
+	github.com/go-pg/pg/v9 v9.1.6
 	github.com/go-yaml/yaml v2.1.0+incompatible
-	github.com/golang-migrate/migrate v3.5.4+incompatible
 	github.com/gomodule/redigo v1.8.8
-	github.com/lib/pq v1.10.4
-	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/rs/zerolog v1.26.1
+	github.com/sanches1984/gopkg-pg-orm v0.0.0-20220405101644-1b7fea6b7e63
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20211215165025-cf75a172585e

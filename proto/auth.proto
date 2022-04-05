@@ -6,8 +6,9 @@ service AuthService {
     rpc Login (LoginRequest) returns (TokenResponse) {}
     rpc Logout (LogoutRequest) returns (LogoutResponse) {}
     rpc ChangePassword (ChangePasswordRequest) returns (ChangePasswordResponse) {}
-    rpc RefreshTokens (RefreshTokensRequest) returns (TokenResponse) {}
+    rpc GetAccessTokenByRefreshToken (GetAccessTokenByRefreshTokenRequest) returns (TokenResponse) {}
     rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse) {}
+    rpc UpdateSessionData (UpdateSessionDataRequest) returns (UpdateSessionDataResponse) {}
 }
 
 service ManageService {
@@ -39,7 +40,7 @@ message LogoutResponse {
     string session_id = 1;
 }
 
-message RefreshTokensRequest {
+message GetAccessTokenByRefreshTokenRequest {
     string refresh_token = 1;
 }
 
@@ -49,6 +50,17 @@ message ValidateTokenRequest {
 
 message ValidateTokenResponse {
     bool valid = 1;
+    int64 user_id = 2;
+    string session_id = 3;
+    bytes data = 4;
+}
+message UpdateSessionDataRequest {
+    string token = 1;
+    bytes data = 4;
+}
+
+message UpdateSessionDataResponse {
+    bool updated = 1;
 }
 
 message TokenResponse {
@@ -78,8 +90,8 @@ message GetUserListRequest {
     enum Order {
         CREATED_ASC = 0;
         CREATED_DESC = 1;
-        UUID_ASC = 2;
-        UUID_DESC = 3;
+        LOGIN_ASC = 2;
+        LOGIN_DESC = 3;
     }
     int64 id = 1;
     string login = 2;
@@ -102,4 +114,5 @@ message User {
     string login = 2;
     string created = 3;
     string updated = 4;
+    string deleted = 5;
 }

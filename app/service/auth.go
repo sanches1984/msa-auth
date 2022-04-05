@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"github.com/rs/zerolog"
+	"github.com/sanches1984/auth/app/errors"
+	"github.com/sanches1984/auth/app/model"
 	"github.com/sanches1984/auth/pkg/jwt"
 	api "github.com/sanches1984/auth/proto/api"
 )
@@ -24,31 +26,34 @@ func NewAuthService(repo Repository, storage Storage, logger zerolog.Logger) *Au
 }
 
 func (s *AuthService) Login(ctx context.Context, r *api.LoginRequest) (*api.TokenResponse, error) {
-	user, err := s.repo.GetUserByLogin(ctx, r.Login)
+	user, err := s.repo.GetUser(ctx, model.UserFilter{Login: r.GetLogin()})
 	if err != nil {
-		s.logger.Error().Err(err).Str("login", r.Login).Msg("can't get user by login")
-		return nil, err
+		s.logger.Error().Err(err).Str("login", r.GetLogin()).Msg("can't get user by login")
+		return nil, errors.Convert(err)
 	} else if user == nil {
-		s.logger.Info().Str("login", r.Login).Msg("user not found")
-		return nil, ErrUserNotFound
-	} else if user.Deleted != nil {
-		s.logger.Warn().Str("login", r.Login).Msg("user is deleted")
-		return nil, ErrUserIsDeleted
+		s.logger.Info().Str("login", r.GetLogin()).Msg("user not found")
+		return nil, errors.Convert(errors.ErrUserNotFound)
 	}
 
-	if !user.IsPasswordCorrect(r.Password) {
-		return nil, ErrIncorrectPassword
+	if !user.IsPasswordCorrect(r.GetPassword()) {
+		return nil, errors.Convert(errors.ErrIncorrectPassword)
 	}
 
-	// todo: check refresh token
-
-	session, err := s.storage.CreateSession(user.ID, r.Data)
+	session, err := s.storage.CreateSession(user.ID, r.GetData())
 	if err != nil {
-		s.logger.Error().Err(err).Str("login", r.Login).Msg("can't create session")
-		return nil, err
+		s.logger.Error().Err(err).Str("login", r.GetLogin()).Msg("can't create session")
+		return nil, errors.Convert(err)
 	}
 
-	// todo: write refresh token
+	if err := s.repo.CreateRefreshToken(ctx, &model.RefreshToken{
+		UserID:    session.UserID,
+		SessionID: session.ID,
+		Token:     session.Refresh.Value,
+		ExpiresIn: session.Refresh.ExpiresAt,
+	}); err != nil {
+		s.logger.Error().Err(err).Str("login", r.GetLogin()).Msg("can't create refresh token")
+		return nil, errors.Convert(err)
+	}
 
 	return &api.TokenResponse{
 		SessionId: session.ID.String(),
@@ -64,56 +69,64 @@ func (s *AuthService) Login(ctx context.Context, r *api.LoginRequest) (*api.Toke
 }
 
 func (s *AuthService) Logout(ctx context.Context, r *api.LogoutRequest) (*api.LogoutResponse, error) {
-	userID, sessionID, err := s.storage.DeleteSession(r.Token)
+	session, err := s.storage.GetSession(r.GetToken())
 	if err != nil {
+		s.logger.Error().Err(err).Msg("can't get session")
+		return nil, errors.Convert(err)
+	} else if session == nil {
+		s.logger.Warn().Msg("session not found")
+		return &api.LogoutResponse{SessionId: ""}, nil
+	}
+
+	if err := s.storage.DeleteSession(r.GetToken()); err != nil {
 		s.logger.Error().Err(err).Msg("can't delete session")
-		return nil, err
+		return nil, errors.Convert(err)
 	}
 
-	if err := s.repo.DeleteRefreshToken(ctx, userID, sessionID); err != nil {
+	if err := s.repo.DeleteRefreshToken(ctx, model.RefreshTokenFilter{UserID: session.UserID, SessionID: session.ID}); err != nil {
 		s.logger.Error().Err(err).Msg("can't delete refresh token")
-		return nil, err
+		return nil, errors.Convert(err)
 	}
 
-	return &api.LogoutResponse{SessionId: sessionID.String()}, nil
+	return &api.LogoutResponse{SessionId: session.ID.String()}, nil
 }
 
 func (s *AuthService) ChangePassword(ctx context.Context, r *api.ChangePasswordRequest) (*api.ChangePasswordResponse, error) {
-	userID, err := s.storage.GetUserIDByToken(r.Token)
+	session, err := s.storage.GetSession(r.GetToken())
 	if err != nil {
 		s.logger.Error().Err(err).Msg("can't get user id")
-		return nil, err
+		return nil, errors.Convert(err)
+	} else if session == nil {
+		s.logger.Info().Msg("session not found")
+		return nil, errors.Convert(errors.ErrSessionNotFound)
 	}
 
-	user, err := s.repo.GetUserByID(ctx, userID)
+	user, err := s.repo.GetUser(ctx, model.UserFilter{ID: session.UserID})
 	if err != nil {
-		s.logger.Error().Err(err).Int64("id", userID).Msg("can't get user by id")
-		return nil, err
+		s.logger.Error().Err(err).Int64("id", session.UserID).Msg("can't get user by id")
+		return nil, errors.Convert(err)
 	} else if user == nil {
-		s.logger.Info().Int64("id", userID).Msg("user not found")
-		return nil, ErrUserNotFound
-	} else if user.Deleted != nil {
-		s.logger.Warn().Int64("id", userID).Msg("user is deleted")
-		return nil, ErrUserIsDeleted
+		s.logger.Info().Int64("id", session.UserID).Msg("user not found")
+		return nil, errors.Convert(errors.ErrUserNotFound)
 	}
 
-	err = user.SetHashByPassword(r.NewPassword)
+	err = user.SetHashByPassword(r.GetNewPassword())
 	if err != nil {
-		s.logger.Error().Err(err).Int64("id", userID).Msg("can't set password hash")
-		return nil, err
+		s.logger.Error().Err(err).Int64("id", session.UserID).Msg("can't set password hash")
+		return nil, errors.Convert(err)
 	}
 
-	err = s.repo.UpdateUserPassword(ctx, user.ID, user.PasswordHash)
+	err = s.repo.UpdateUserPassword(ctx, user)
 	if err != nil {
-		s.logger.Error().Err(err).Int64("id", userID).Msg("can't change user password")
-		return nil, err
+		s.logger.Error().Err(err).Int64("id", session.UserID).Msg("can't change user password")
+		return nil, errors.Convert(err)
 	}
 
-	s.logger.Debug().Int64("id", userID).Msg("password changed")
+	s.logger.Debug().Int64("id", session.UserID).Msg("password changed")
 	return &api.ChangePasswordResponse{Changed: true}, nil
 }
 
-func (s *AuthService) RefreshTokens(ctx context.Context, r *api.RefreshTokensRequest) (*api.TokenResponse, error) {
+func (s *AuthService) GetAccessTokenByRefreshToken(ctx context.Context, r *api.GetAccessTokenByRefreshTokenRequest) (*api.TokenResponse, error) {
 	// todo
 	return &api.TokenResponse{
 		Access: &api.Token{
@@ -128,22 +141,37 @@ func (s *AuthService) RefreshTokens(ctx context.Context, r *api.RefreshTokensReq
 }
 
 func (s *AuthService) ValidateToken(ctx context.Context, r *api.ValidateTokenRequest) (*api.ValidateTokenResponse, error) {
-	userID, err := s.storage.GetUserIDByToken(r.Token)
+	session, err := s.storage.GetSession(r.GetToken())
 	if err != nil {
 		if err == jwt.ErrInvalidToken {
 			return &api.ValidateTokenResponse{Valid: false}, nil
 		}
 		s.logger.Error().Err(err).Msg("can't user id")
-		return nil, err
-	}
-
-	user, err := s.repo.GetUserByID(ctx, userID)
-	if err != nil {
-		s.logger.Error().Err(err).Int64("id", userID).Msg("can't get user by id")
-		return nil, err
-	} else if user == nil || user.Deleted != nil {
+		return nil, errors.Convert(err)
+	} else if session == nil {
 		return &api.ValidateTokenResponse{Valid: false}, nil
 	}
 
-	return &api.ValidateTokenResponse{Valid: true}, nil
+	user, err := s.repo.GetUser(ctx, model.UserFilter{ID: session.UserID})
+	if err != nil {
+		s.logger.Error().Err(err).Int64("id", session.UserID).Msg("can't get user by id")
+		return nil, errors.Convert(err)
+	} else if user == nil {
+		return &api.ValidateTokenResponse{Valid: false}, nil
+	}
+
+	return &api.ValidateTokenResponse{
+		Valid:     true,
+		UserId:    session.UserID,
+		SessionId: session.ID.String(),
+		Data:      session.Data,
+	}, nil
+}
+
+func (s *AuthService) UpdateSessionData(ctx context.Context, r *api.UpdateSessionDataRequest) (*api.UpdateSessionDataResponse, error) {
+	err := s.storage.UpdateSession(r.GetToken(), r.GetData())
+	if err != nil {
+		return nil, errors.Convert(err)
+	}
+	return &api.UpdateSessionDataResponse{Updated: true}, nil
 }

@@ -16,9 +16,22 @@ func New(redis Redis, jwt JwtService) *Storage {
 	}
 }
 
-func (s *Storage) GetUserIDByToken(token string) (int64, error) {
-	userID, _, err := s.jwt.ParseToken(token)
-	return userID, err
+func (s *Storage) GetSession(token string) (*SessionData, error) {
+	userID, sessionID, err := s.jwt.ParseToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := s.redis.Get(token)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SessionData{
+		ID:     sessionID,
+		UserID: userID,
+		Data:   data,
+	}, nil
 }
 
 func (s *Storage) CreateSession(userID int64, userData []byte) (*Session, error) {
@@ -53,16 +66,10 @@ func (s *Storage) CreateSession(userID int64, userData []byte) (*Session, error)
 	return session, nil
 }
 
-func (s *Storage) DeleteSession(token string) (int64, uuid.UUID, error) {
-	userID, sessionID, err := s.jwt.ParseToken(token)
-	if err != nil {
-		return 0, uuid.Nil, err
-	}
+func (s *Storage) UpdateSession(token string, userData []byte) error {
+	return s.redis.Set(token, userData)
+}
 
-	err = s.redis.Delete(token)
-	if err != nil {
-		return 0, uuid.Nil, err
-	}
-
-	return userID, sessionID, nil
+func (s *Storage) DeleteSession(token string) error {
+	return s.redis.Delete(token)
 }
