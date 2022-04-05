@@ -5,7 +5,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/sanches1984/auth/app/errors"
 	"github.com/sanches1984/auth/app/model"
-	"github.com/sanches1984/auth/pkg/jwt"
 	api "github.com/sanches1984/auth/proto/api"
 )
 
@@ -142,13 +141,7 @@ func (s *AuthService) GetAccessTokenByRefreshToken(ctx context.Context, r *api.G
 
 func (s *AuthService) ValidateToken(ctx context.Context, r *api.ValidateTokenRequest) (*api.ValidateTokenResponse, error) {
 	session, err := s.storage.GetSession(r.GetToken())
-	if err != nil {
-		if err == jwt.ErrInvalidToken {
-			return &api.ValidateTokenResponse{Valid: false}, nil
-		}
-		s.logger.Error().Err(err).Msg("can't user id")
-		return nil, errors.Convert(err)
-	} else if session == nil {
+	if err != nil || session == nil {
 		return &api.ValidateTokenResponse{Valid: false}, nil
 	}
 

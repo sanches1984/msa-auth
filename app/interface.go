@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"github.com/sanches1984/auth/app/errors"
 	"github.com/sanches1984/auth/app/model"
 	"github.com/sanches1984/auth/app/storage"
 	database "github.com/sanches1984/gopkg-pg-orm"
@@ -36,4 +37,15 @@ func databaseInterceptor(db database.IClient) grpc.ServerOption {
 			return db
 		},
 	))
+}
+
+func errorsInterceptor() grpc.ServerOption {
+	return grpc.UnaryInterceptor(
+		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			resp, err := handler(ctx, req)
+			if err != nil {
+				return resp, errors.Convert(err)
+			}
+			return resp, nil
+		})
 }

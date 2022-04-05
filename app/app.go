@@ -17,6 +17,7 @@ import (
 )
 
 type App struct {
+	grpc  *grpc.Server
 	db    database.IClient
 	redis *redis.Client
 
@@ -43,10 +44,16 @@ func New(logger zerolog.Logger) (*App, error) {
 	app.repo = repository.New()
 	app.storage = storage.New(app.redis, jwtService)
 
+	app.grpc = grpc.NewServer(databaseInterceptor(app.db))
+	api.RegisterAuthServiceServer(app.grpc, service.NewAuthService(app.repo, app.storage, app.logger))
+	api.RegisterManageServiceServer(app.grpc, service.NewManageService(app.repo, app.storage, app.logger))
 	return app, nil
 }
 
 func (a *App) Close() {
+	if a.grpc != nil {
+		defer a.grpc.GracefulStop()
+	}
 	if a.db != nil {
 		defer a.db.Close()
 	}
@@ -61,10 +68,6 @@ func (a *App) Serve(addr string) error {
 		return err
 	}
 
-	s := grpc.NewServer(databaseInterceptor(a.db))
-	api.RegisterAuthServiceServer(s, service.NewAuthService(a.repo, a.storage, a.logger))
-	api.RegisterManageServiceServer(s, service.NewManageService(a.repo, a.storage, a.logger))
-
 	a.logger.Info().Str("addr", config.Addr()).Msg("listen")
-	return s.Serve(conn)
+	return a.grpc.Serve(conn)
 }
