@@ -21,7 +21,7 @@ func main() {
 		logger.Fatal().Err(err).Msg("app init error")
 	}
 
-	if err := application.Serve(config.Addr()); err != nil {
+	if err := application.Serve(config.Env().Host); err != nil {
 		logger.Fatal().Err(err).Msg("auth service error")
 	}
 }

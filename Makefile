@@ -3,3 +3,6 @@ generate-proto:
 
 test:
 	go test -cover ./...
+
+env:
+	@cp .env.example .env

@@ -35,12 +35,12 @@ func New(logger zerolog.Logger) (*App, error) {
 		return app, fmt.Errorf("db init error: %w", err)
 	}
 
-	app.redis, err = resources.InitRedis()
+	app.redis, err = resources.InitRedis(logger)
 	if err != nil {
 		return app, fmt.Errorf("redis init error: %w", err)
 	}
 
-	jwtService := jwt.NewService(config.AccessTokenTTL(), config.RefreshTokenTTL(), config.Secrets().JwtSecret)
+	jwtService := jwt.NewService(config.Env().AccessTTL, config.Env().RefreshTTL, config.Env().JwtSecret)
 	app.repo = repository.New()
 	app.storage = storage.New(app.redis, jwtService)
 
@@ -75,6 +75,6 @@ func (a *App) Serve(addr string) error {
 		return err
 	}
 
-	a.logger.Info().Str("addr", config.Addr()).Msg("listen")
+	a.logger.Info().Str("addr", config.Env().Host).Msg("listen")
 	return a.grpc.Serve(conn)
 }

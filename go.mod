@@ -5,9 +5,10 @@ go 1.16
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-pg/pg/v9 v9.1.6
-	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/gomodule/redigo v1.8.8
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
+	github.com/joho/godotenv v1.4.0 // indirect
+	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/rs/zerolog v1.26.1
 	github.com/sanches1984/gopkg-pg-orm v0.0.1
 	github.com/satori/go.uuid v1.2.0

@@ -9,13 +9,16 @@ import (
 )
 
 func InitDatabase(logger zerolog.Logger) (database.IClient, error) {
-	dsn := config.SQLDSN()
+	dsn := config.Env().SQLDSN
 	opts, err := pg.ParseURL(dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	db := database.Connect(config.App, opts)
+	opts.DialTimeout = config.Env().ConnectTimeout
+	opts.ReadTimeout = config.Env().ReadTimeout
+	opts.WriteTimeout = config.Env().ReadTimeout
+	db := database.Connect(config.Env().AppName, opts)
 	if _, err := db.Exec("SELECT 1"); err != nil {
 		return nil, err
 	}
