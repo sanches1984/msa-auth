@@ -9,6 +9,9 @@ import (
 var ErrUserNotFound = errors.New("user not found")
 var ErrSessionNotFound = errors.New("session not found")
 var ErrIncorrectPassword = errors.New("incorrect password")
+var ErrBadRequest = errors.New("bad request")
+var ErrTokenExpired = errors.New("token has expired")
+var ErrTokenInvalid = errors.New("invalid token")
 
 type GRPCError struct {
 	err    error
@@ -21,8 +24,10 @@ func Convert(err error) GRPCError {
 		return newGRPCError(err, codes.NotFound)
 	case ErrIncorrectPassword:
 		return newGRPCError(err, codes.PermissionDenied)
-	case ErrSessionNotFound:
+	case ErrSessionNotFound, ErrTokenExpired, ErrTokenInvalid:
 		return newGRPCError(err, codes.Unauthenticated)
+	case ErrBadRequest:
+		return newGRPCError(err, codes.InvalidArgument)
 	default:
 		return newGRPCError(err, codes.Internal)
 	}

@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	logger := log.Output(zerolog.ConsoleWriter{Out: os.Stderr}).With().Timestamp().Logger()
+	logger := log.Output(zerolog.ConsoleWriter{Out: os.Stdout}).With().Timestamp().Logger()
 
 	if err := config.Load(); err != nil {
 		logger.Fatal().Err(err).Msg("config load error")

@@ -27,4 +27,17 @@ func TestRedis(t *testing.T) {
 
 	err = client.Delete("my_key")
 	require.NoError(t, err)
+
+	err = client.Delete("my_key")
+	require.NoError(t, err)
+
+	data, err = client.Get("my_key")
+	require.EqualError(t, err, ErrRecordNotFound.Error())
+	require.Nil(t, data)
+
+	err = client.Set("my_key", nil)
+	require.NoError(t, err)
+
+	_, err = client.Get("my_key")
+	require.NoError(t, err)
 }

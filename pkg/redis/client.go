@@ -1,12 +1,15 @@
 package redis
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gomodule/redigo/redis"
 	"net"
 	"sync"
 	"time"
 )
+
+var ErrRecordNotFound = errors.New("record not found")
 
 type Config struct {
 	Host              string
@@ -34,6 +37,9 @@ func NewClient(config Config) (*Client, error) {
 }
 
 func (c *Client) Set(key string, value []byte) error {
+	if value == nil {
+		value = []byte{}
+	}
 	_, err := c.do("SET", key, value)
 	return err
 }
@@ -47,6 +53,9 @@ func (c *Client) Get(key string) ([]byte, error) {
 	data, err := c.do("GET", key)
 	if err != nil {
 		return nil, err
+	}
+	if data == nil {
+		return nil, ErrRecordNotFound
 	}
 	return data.([]byte), nil
 }

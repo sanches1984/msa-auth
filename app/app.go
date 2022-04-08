@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/rs/zerolog"
 	"github.com/sanches1984/auth/app/repository"
 	"github.com/sanches1984/auth/app/resources"
@@ -17,12 +18,11 @@ import (
 )
 
 type App struct {
-	grpc  *grpc.Server
-	db    database.IClient
-	redis *redis.Client
-
-	repo    Repository
-	storage Storage
+	grpc    *grpc.Server
+	db      database.IClient
+	redis   *redis.Client
+	repo    *repository.Repository
+	storage *storage.Storage
 	logger  zerolog.Logger
 }
 
@@ -44,21 +44,28 @@ func New(logger zerolog.Logger) (*App, error) {
 	app.repo = repository.New()
 	app.storage = storage.New(app.redis, jwtService)
 
-	app.grpc = grpc.NewServer(databaseInterceptor(app.db))
+	app.grpc = grpc.NewServer(
+		grpc.UnaryInterceptor(
+			grpc_middleware.ChainUnaryServer(
+				databaseInterceptor(app.db),
+				errorConvertInterceptor(),
+			),
+		),
+	)
 	api.RegisterAuthServiceServer(app.grpc, service.NewAuthService(app.repo, app.storage, app.logger))
 	api.RegisterManageServiceServer(app.grpc, service.NewManageService(app.repo, app.storage, app.logger))
 	return app, nil
 }
 
 func (a *App) Close() {
-	if a.grpc != nil {
-		defer a.grpc.GracefulStop()
-	}
 	if a.db != nil {
 		defer a.db.Close()
 	}
 	if a.redis != nil {
 		defer a.redis.Close()
+	}
+	if a.grpc != nil {
+		defer a.grpc.GracefulStop()
 	}
 }
 

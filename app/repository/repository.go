@@ -96,6 +96,10 @@ func (r *Repository) CreateRefreshToken(ctx context.Context, token *model.Refres
 	return r.db.Insert(ctx, token)
 }
 
+func (r *Repository) UpdateRefreshToken(ctx context.Context, token *model.RefreshToken) error {
+	return r.db.Update(ctx, token, "token", "expires_in")
+}
+
 func (r *Repository) DeleteRefreshToken(ctx context.Context, filter model.RefreshTokenFilter) error {
 	opts := opt.List()
 	opts = append(opts, opt.Eq("user_id", filter.UserID))

@@ -5,6 +5,7 @@ import (
 	"github.com/sanches1984/auth/app/model"
 	"github.com/sanches1984/auth/app/storage"
 	"github.com/sanches1984/gopkg-pg-orm/pager"
+	uuid "github.com/satori/go.uuid"
 )
 
 type Repository interface {
@@ -16,12 +17,17 @@ type Repository interface {
 	GetRefreshTokens(ctx context.Context, filter model.RefreshTokenFilter) (model.RefreshTokenList, error)
 	GetRefreshToken(ctx context.Context, filter model.RefreshTokenFilter) (*model.RefreshToken, error)
 	CreateRefreshToken(ctx context.Context, token *model.RefreshToken) error
+	UpdateRefreshToken(ctx context.Context, token *model.RefreshToken) error
 	DeleteRefreshToken(ctx context.Context, filter model.RefreshTokenFilter) error
 }
 
 type Storage interface {
-	GetSession(token string) (*storage.SessionData, error)
+	DecodeToken(token string) (int64, uuid.UUID, error)
+	GetSessionData(token string) ([]byte, error)
+	GetSessionDataByUUID(sessionID uuid.UUID) ([]byte, error)
 	CreateSession(userID int64, userData []byte) (*storage.Session, error)
-	UpdateSession(token string, userData []byte) error
+	RefreshSession(userID int64, sessionID uuid.UUID, userData []byte) (*storage.Session, error)
+	UpdateSessionData(token string, userData []byte) error
 	DeleteSession(token string) error
+	DeleteSessionByUUID(sessionID uuid.UUID) error
 }

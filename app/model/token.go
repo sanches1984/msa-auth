@@ -35,6 +35,10 @@ func (t *RefreshToken) BeforeUpdate(ctx context.Context) (context.Context, error
 	return ctx, nil
 }
 
+func (t RefreshToken) IsExpired() bool {
+	return int32(time.Now().Unix()) > t.ExpiresIn
+}
+
 func (tl RefreshTokenList) Sessions() []string {
 	sessions := make([]string, 0, len(tl))
 	for _, t := range tl {
