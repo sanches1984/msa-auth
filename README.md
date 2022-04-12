@@ -5,3 +5,4 @@
 - Readme
 - Unit-tests
 - graceful shutdown
+- dockerfile
