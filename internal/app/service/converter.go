@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/sanches1984/auth/pkg/errors"
+	dberr "github.com/sanches1984/gopkg-pg-orm/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -20,6 +21,18 @@ type grpcError struct {
 func convert(err error) GRPCError {
 	if v, ok := err.(grpcError); ok {
 		return v
+	}
+
+	if v, ok := err.(dberr.Error); ok {
+		if v.TypeOf(dberr.NotFound) {
+			return newGRPCError(v, codes.NotFound)
+		} else if v.TypeOf(dberr.BadRequest) {
+			return newGRPCError(v, codes.InvalidArgument)
+		} else if v.TypeOf(dberr.Conflict) {
+			return newGRPCError(v, codes.AlreadyExists)
+		} else {
+			return newGRPCError(v, codes.Internal)
+		}
 	}
 
 	switch err {

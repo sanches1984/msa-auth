@@ -195,6 +195,9 @@ func (s *AuthService) ValidateToken(ctx context.Context, r *api.ValidateTokenReq
 	if err != nil {
 		s.logger.Warn().Err(err).Int64("user_id", userID).Msg("can't get session data")
 		return nil, convert(errors.ErrTokenInvalid)
+	} else if sessionData == nil {
+		s.logger.Debug().Int64("user_id", userID).Msg("invalid token")
+		return nil, convert(errors.ErrTokenInvalid)
 	}
 
 	user, err := s.repo.GetUser(ctx, model.UserFilter{ID: userID})
