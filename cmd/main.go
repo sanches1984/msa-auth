@@ -1,25 +1,27 @@
 package main
 
 import (
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-	"github.com/sanches1984/auth/app"
 	"github.com/sanches1984/auth/config"
-	"os"
+	"github.com/sanches1984/auth/internal/app"
+	"github.com/sanches1984/auth/internal/app/resources"
+	syslog "log"
 )
 
 func main() {
-	logger := log.Output(zerolog.ConsoleWriter{Out: os.Stdout}).With().Timestamp().Logger()
-
 	if err := config.Load(); err != nil {
-		logger.Fatal().Err(err).Msg("config load error")
+		syslog.Fatalln("load config error:", err)
 	}
+
+	logger := resources.InitLogger()
 
 	application, err := app.New(logger)
-	defer application.Close()
 	if err != nil {
+		if application != nil {
+			application.Close()
+		}
 		logger.Fatal().Err(err).Msg("app init error")
 	}
+	defer application.Close()
 
 	if err := application.Serve(config.Env().Host); err != nil {
 		logger.Fatal().Err(err).Msg("auth service error")

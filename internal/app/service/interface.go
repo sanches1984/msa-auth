@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"github.com/sanches1984/auth/app/model"
-	"github.com/sanches1984/auth/app/storage"
+	"github.com/sanches1984/auth/internal/app/model"
+	storage2 "github.com/sanches1984/auth/internal/pkg/storage"
 	"github.com/sanches1984/gopkg-pg-orm/pager"
 	uuid "github.com/satori/go.uuid"
 )
@@ -25,8 +25,8 @@ type Storage interface {
 	DecodeToken(token string) (int64, uuid.UUID, error)
 	GetSessionData(token string) ([]byte, error)
 	GetSessionDataByUUID(sessionID uuid.UUID) ([]byte, error)
-	CreateSession(userID int64, userData []byte) (*storage.Session, error)
-	RefreshSession(userID int64, sessionID uuid.UUID, userData []byte) (*storage.Session, error)
+	CreateSession(userID int64, userData []byte) (*storage2.Session, error)
+	RefreshSession(userID int64, sessionID uuid.UUID, userData []byte) (*storage2.Session, error)
 	UpdateSessionData(token string, userData []byte) error
 	DeleteSession(token string) error
 	DeleteSessionByUUID(sessionID uuid.UUID) error

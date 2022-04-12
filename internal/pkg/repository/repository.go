@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"github.com/sanches1984/auth/app/model"
+	"github.com/sanches1984/auth/internal/app/model"
 	"github.com/sanches1984/gopkg-pg-orm/pager"
 	"github.com/sanches1984/gopkg-pg-orm/repository/dao"
 	"github.com/sanches1984/gopkg-pg-orm/repository/opt"

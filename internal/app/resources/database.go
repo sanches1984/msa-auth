@@ -8,7 +8,7 @@ import (
 	"github.com/sanches1984/gopkg-pg-orm/migrate"
 )
 
-func InitDatabase(logger zerolog.Logger) (database.IClient, error) {
+func InitDatabase(migrationsPath string, logger zerolog.Logger) (database.IClient, error) {
 	dsn := config.Env().SQLDSN
 	opts, err := pg.ParseURL(dsn)
 	if err != nil {
@@ -25,7 +25,7 @@ func InitDatabase(logger zerolog.Logger) (database.IClient, error) {
 
 	logger.Info().Str("dsn", dsn).Msg("db connected")
 
-	if err := migrate.NewMigrator("app/migrations", dsn, migrate.WithLogger(logger)).Run(); err != nil {
+	if err := migrate.NewMigrator(migrationsPath, dsn, migrate.WithLogger(logger)).Run(); err != nil {
 		return nil, err
 	}
 

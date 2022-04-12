@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"github.com/rs/zerolog"
-	"github.com/sanches1984/auth/app/errors"
-	"github.com/sanches1984/auth/app/model"
+	"github.com/sanches1984/auth/internal/app/model"
+	"github.com/sanches1984/auth/pkg/errors"
 	api "github.com/sanches1984/auth/proto/api"
 	"github.com/sanches1984/gopkg-pg-orm/pager"
 	"golang.org/x/sync/errgroup"
@@ -31,12 +31,12 @@ func (s *ManageService) CreateUser(ctx context.Context, r *api.CreateUserRequest
 	user := &model.User{Login: r.GetLogin()}
 	if err := user.SetHashByPassword(r.GetPassword()); err != nil {
 		s.logger.Error().Err(err).Str("login", r.GetLogin()).Msg("can't set password hash")
-		return nil, err
+		return nil, convert(err)
 	}
 
 	if err := s.repo.CreateUser(ctx, user); err != nil {
 		s.logger.Error().Err(err).Str("login", r.GetLogin()).Msg("can't create user")
-		return nil, err
+		return nil, convert(err)
 	}
 
 	s.logger.Info().Int64("user_id", user.ID).Msg("created new user")
@@ -47,16 +47,16 @@ func (s *ManageService) DeleteUser(ctx context.Context, r *api.DeleteUserRequest
 	user, err := s.repo.GetUser(ctx, model.UserFilter{ID: r.GetId()})
 	if err != nil {
 		s.logger.Error().Err(err).Int64("user_id", r.GetId()).Msg("can't get user by id")
-		return nil, err
+		return nil, convert(err)
 	} else if user == nil {
 		s.logger.Info().Int64("user_id", r.GetId()).Msg("user not found")
-		return nil, errors.ErrUserNotFound
+		return nil, convert(errors.ErrUserNotFound)
 	}
 
 	tokens, err := s.repo.GetRefreshTokens(ctx, model.RefreshTokenFilter{UserID: r.GetId()})
 	if err != nil {
 		s.logger.Error().Err(err).Int64("user_id", r.GetId()).Msg("can't get refresh token list")
-		return nil, err
+		return nil, convert(err)
 	}
 
 	eg := errgroup.Group{}
@@ -68,16 +68,16 @@ func (s *ManageService) DeleteUser(ctx context.Context, r *api.DeleteUserRequest
 	}
 	if err := eg.Wait(); err != nil {
 		s.logger.Error().Err(err).Int64("user_id", r.GetId()).Msg("can't delete session")
-		return nil, err
+		return nil, convert(err)
 	}
 
 	if err := s.repo.DeleteRefreshToken(ctx, model.RefreshTokenFilter{UserID: r.GetId()}); err != nil {
 		s.logger.Error().Err(err).Int64("user_id", r.GetId()).Msg("can't delete refresh token")
-		return nil, err
+		return nil, convert(err)
 	}
 	if err := s.repo.DeleteUser(ctx, user); err != nil {
 		s.logger.Error().Err(err).Int64("user_id", r.GetId()).Msg("can't delete user")
-		return nil, err
+		return nil, convert(err)
 	}
 
 	s.logger.Info().Int64("user_id", user.ID).Msg("deleted user")
@@ -95,7 +95,7 @@ func (s *ManageService) GetUserList(ctx context.Context, r *api.GetUserListReque
 	users, err := s.repo.GetUsers(ctx, filter, pgr)
 	if err != nil {
 		s.logger.Error().Err(err).Msg("can't get user list")
-		return nil, err
+		return nil, convert(err)
 	}
 
 	userList := make([]*api.User, 0, len(users))

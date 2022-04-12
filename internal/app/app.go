@@ -2,19 +2,22 @@ package app
 
 import (
 	"fmt"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpcmw "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/rs/zerolog"
-	"github.com/sanches1984/auth/app/repository"
-	"github.com/sanches1984/auth/app/resources"
-	"github.com/sanches1984/auth/app/service"
-	"github.com/sanches1984/auth/app/storage"
 	"github.com/sanches1984/auth/config"
+	"github.com/sanches1984/auth/internal/app/resources"
+	"github.com/sanches1984/auth/internal/app/service"
+	"github.com/sanches1984/auth/internal/pkg/metrics"
+	"github.com/sanches1984/auth/internal/pkg/repository"
+	"github.com/sanches1984/auth/internal/pkg/storage"
 	"github.com/sanches1984/auth/pkg/jwt"
 	"github.com/sanches1984/auth/pkg/redis"
 	api "github.com/sanches1984/auth/proto/api"
 	database "github.com/sanches1984/gopkg-pg-orm"
+	dbmw "github.com/sanches1984/gopkg-pg-orm/middleware"
 	"google.golang.org/grpc"
 	"net"
+	"time"
 )
 
 type App struct {
@@ -23,6 +26,7 @@ type App struct {
 	redis   *redis.Client
 	repo    *repository.Repository
 	storage *storage.Storage
+	metrics *metrics.Service
 	logger  zerolog.Logger
 }
 
@@ -30,7 +34,7 @@ func New(logger zerolog.Logger) (*App, error) {
 	var err error
 	app := &App{logger: logger}
 
-	app.db, err = resources.InitDatabase(logger)
+	app.db, err = resources.InitDatabase(config.Env().MigrationsPath, logger)
 	if err != nil {
 		return app, fmt.Errorf("db init error: %w", err)
 	}
@@ -43,17 +47,22 @@ func New(logger zerolog.Logger) (*App, error) {
 	jwtService := jwt.NewService(config.Env().AccessTTL, config.Env().RefreshTTL, config.Env().JwtSecret)
 	app.repo = repository.New()
 	app.storage = storage.New(app.redis, jwtService)
+	app.metrics = metrics.NewService(config.Env().MetricsHost)
 
 	app.grpc = grpc.NewServer(
 		grpc.UnaryInterceptor(
-			grpc_middleware.ChainUnaryServer(
-				databaseInterceptor(app.db),
-				errorConvertInterceptor(),
+			grpcmw.ChainUnaryServer(
+				dbmw.NewDBServerInterceptor(app.db, database.WithLogger(logger, time.Second)),
+				app.metrics.AppMetricsInterceptor(),
+				app.metrics.GRPCMetricsInterceptor(),
 			),
 		),
 	)
+
 	api.RegisterAuthServiceServer(app.grpc, service.NewAuthService(app.repo, app.storage, app.logger))
 	api.RegisterManageServiceServer(app.grpc, service.NewManageService(app.repo, app.storage, app.logger))
+	app.metrics.Initialize(app.grpc)
+
 	return app, nil
 }
 
@@ -75,6 +84,13 @@ func (a *App) Serve(addr string) error {
 		return err
 	}
 
-	a.logger.Info().Str("addr", config.Env().Host).Msg("listen")
+	go func() {
+		a.logger.Info().Str("host", config.Env().MetricsHost).Msg("listen metrics")
+		if err := a.metrics.Listen(); err != nil {
+			a.logger.Error().Err(err).Msg("metrics failed")
+		}
+	}()
+
+	a.logger.Info().Str("host", config.Env().Host).Msg("listen service")
 	return a.grpc.Serve(conn)
 }

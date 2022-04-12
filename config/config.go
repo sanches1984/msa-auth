@@ -18,6 +18,7 @@ type Environment struct {
 	AppName        string        `envconfig:"APP_NAME"        default:"auth"`
 	Host           string        `envconfig:"HOST"            required:"true"`
 	SQLDSN         string        `envconfig:"SQLDSN"          required:"true"`
+	MigrationsPath string        `envconfig:"MIGRATIONS_PATH" default:"internal/pkg/migrations"`
 	RedisHost      string        `envconfig:"REDIS_HOST"      required:"true"`
 	RedisPassword  string        `envconfig:"REDIS_PASSWORD"`
 	JwtSecret      string        `envconfig:"JWT_SECRET"      required:"true"`
@@ -25,7 +26,9 @@ type Environment struct {
 	ReadTimeout    time.Duration `envconfig:"READ_TIMEOUT"    default:"2s"`
 	AccessTTL      time.Duration `envconfig:"ACCESS_TTL"      default:"6h"`
 	RefreshTTL     time.Duration `envconfig:"REFRESH_TTL"     default:"24h"`
-	LogType        string        `envconfig:"LOG"             default:"console"`
+	MetricsHost    string        `envconfig:"METRICS_HOST"    default:"localhost:8080"`
+	LogType        string        `envconfig:"LOG_TYPE"        default:"console"`
+	LogLevel       string        `envconfig:"LOG_LEVEL"       default:"info"`
 }
 
 func Load() error {
