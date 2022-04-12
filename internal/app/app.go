@@ -17,8 +17,13 @@ import (
 	dbmw "github.com/sanches1984/gopkg-pg-orm/middleware"
 	"google.golang.org/grpc"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
+
+const gracefulTimeout = 2 * time.Second
 
 type App struct {
 	grpc    *grpc.Server
@@ -41,6 +46,7 @@ func New(logger zerolog.Logger) (*App, error) {
 
 	app.redis, err = resources.InitRedis(logger)
 	if err != nil {
+		app.db.Close()
 		return app, fmt.Errorf("redis init error: %w", err)
 	}
 
@@ -66,31 +72,47 @@ func New(logger zerolog.Logger) (*App, error) {
 	return app, nil
 }
 
-func (a *App) Close() {
-	if a.db != nil {
-		defer a.db.Close()
-	}
-	if a.redis != nil {
-		defer a.redis.Close()
-	}
-	if a.grpc != nil {
-		defer a.grpc.GracefulStop()
-	}
-}
+func (a *App) Serve() error {
+	defer a.stop()
 
-func (a *App) Serve(addr string) error {
-	conn, err := net.Listen("tcp", addr)
+	conn, err := net.Listen("tcp", config.Env().Host)
 	if err != nil {
 		return err
 	}
 
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		a.logger.Info().Str("host", config.Env().MetricsHost).Msg("listen metrics")
+		<-sigCh
+		a.logger.Warn().Msg("termination signal received")
+		a.logger.Info().Msg("stop grpc server")
+		a.grpc.GracefulStop()
+	}()
+
+	go func() {
+		a.logger.Info().Str("host", config.Env().MetricsHost).Msg("start metrics server")
 		if err := a.metrics.Listen(); err != nil {
 			a.logger.Error().Err(err).Msg("metrics failed")
 		}
 	}()
 
-	a.logger.Info().Str("host", config.Env().Host).Msg("listen service")
+	a.logger.Info().Str("host", config.Env().Host).Msg("start grpc server")
 	return a.grpc.Serve(conn)
+}
+
+func (a *App) stop() {
+	time.Sleep(gracefulTimeout)
+
+	if a.db != nil {
+		a.logger.Info().Msg("disconnect database")
+		a.db.Close()
+	}
+	if a.redis != nil {
+		a.logger.Info().Msg("disconnect redis")
+		a.redis.Close()
+	}
+	if a.metrics != nil {
+		a.logger.Info().Msg("stop metrics server")
+		a.metrics.Close()
+	}
 }

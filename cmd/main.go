@@ -16,14 +16,10 @@ func main() {
 
 	application, err := app.New(logger)
 	if err != nil {
-		if application != nil {
-			application.Close()
-		}
 		logger.Fatal().Err(err).Msg("app init error")
 	}
-	defer application.Close()
 
-	if err := application.Serve(config.Env().Host); err != nil {
+	if err := application.Serve(); err != nil {
 		logger.Fatal().Err(err).Msg("auth service error")
 	}
 }

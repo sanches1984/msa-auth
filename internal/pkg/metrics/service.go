@@ -49,3 +49,7 @@ func (l Service) AppMetricsInterceptor() grpc.UnaryServerInterceptor {
 func (l *Service) Listen() error {
 	return l.httpServer.ListenAndServe()
 }
+
+func (l *Service) Close() error {
+	return l.httpServer.Close()
+}
