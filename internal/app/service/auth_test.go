@@ -3,7 +3,7 @@ package service
 import (
 	"github.com/golang/mock/gomock"
 	"github.com/rs/zerolog"
-	"github.com/sanches1984/auth/internal/app/service/mocks"
+	"github.com/sanches1984/msa-auth/internal/app/service/mocks"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )

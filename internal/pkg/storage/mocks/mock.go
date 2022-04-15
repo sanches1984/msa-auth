@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	jwt "github.com/sanches1984/auth/pkg/jwt"
+	jwt "github.com/sanches1984/msa-auth/pkg/jwt"
 	uuid "github.com/satori/go.uuid"
 )
 

@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"github.com/rs/zerolog"
-	"github.com/sanches1984/auth/internal/app/model"
-	"github.com/sanches1984/auth/pkg/errors"
-	"github.com/sanches1984/auth/pkg/redis"
-	api "github.com/sanches1984/auth/proto/api"
+	"github.com/sanches1984/msa-auth/internal/app/model"
+	"github.com/sanches1984/msa-auth/pkg/errors"
+	"github.com/sanches1984/msa-auth/pkg/redis"
+	api "github.com/sanches1984/msa-auth/proto/api"
 	"time"
 )
 

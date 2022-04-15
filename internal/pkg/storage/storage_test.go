@@ -2,8 +2,8 @@ package storage
 
 import (
 	"github.com/golang/mock/gomock"
-	"github.com/sanches1984/auth/internal/pkg/storage/mocks"
-	"github.com/sanches1984/auth/pkg/jwt"
+	"github.com/sanches1984/msa-auth/internal/pkg/storage/mocks"
+	"github.com/sanches1984/msa-auth/pkg/jwt"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/suite"
 	"testing"

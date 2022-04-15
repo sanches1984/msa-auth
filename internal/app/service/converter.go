@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/sanches1984/auth/pkg/errors"
 	dberr "github.com/sanches1984/gopkg-pg-orm/errors"
+	"github.com/sanches1984/msa-auth/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

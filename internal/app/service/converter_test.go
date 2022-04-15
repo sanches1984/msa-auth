@@ -3,8 +3,8 @@ package service
 import (
 	"errors"
 	"github.com/golang/mock/gomock"
-	errs "github.com/sanches1984/auth/pkg/errors"
 	dberr "github.com/sanches1984/gopkg-pg-orm/errors"
+	errs "github.com/sanches1984/msa-auth/pkg/errors"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

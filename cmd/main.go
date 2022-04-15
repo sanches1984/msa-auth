@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/sanches1984/auth/config"
-	"github.com/sanches1984/auth/internal/app"
-	"github.com/sanches1984/auth/internal/app/resources"
+	"github.com/sanches1984/msa-auth/config"
+	"github.com/sanches1984/msa-auth/internal/app"
+	"github.com/sanches1984/msa-auth/internal/app/resources"
 	syslog "log"
 )
 

@@ -3,7 +3,7 @@ package resources
 import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/sanches1984/auth/config"
+	"github.com/sanches1984/msa-auth/config"
 	"os"
 	"strings"
 )

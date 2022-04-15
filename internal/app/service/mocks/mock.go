@@ -9,9 +9,9 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	model "github.com/sanches1984/auth/internal/app/model"
-	storage "github.com/sanches1984/auth/internal/pkg/storage"
 	pager "github.com/sanches1984/gopkg-pg-orm/pager"
+	model "github.com/sanches1984/msa-auth/internal/app/model"
+	storage "github.com/sanches1984/msa-auth/internal/pkg/storage"
 	uuid "github.com/satori/go.uuid"
 )
 

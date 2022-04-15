@@ -3,9 +3,9 @@ package resources
 import (
 	"github.com/go-pg/pg/v9"
 	"github.com/rs/zerolog"
-	"github.com/sanches1984/auth/config"
 	database "github.com/sanches1984/gopkg-pg-orm"
 	"github.com/sanches1984/gopkg-pg-orm/migrate"
+	"github.com/sanches1984/msa-auth/config"
 )
 
 func InitDatabase(migrationsPath string, logger zerolog.Logger) (database.IClient, error) {

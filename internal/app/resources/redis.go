@@ -2,8 +2,8 @@ package resources
 
 import (
 	"github.com/rs/zerolog"
-	"github.com/sanches1984/auth/config"
-	"github.com/sanches1984/auth/pkg/redis"
+	"github.com/sanches1984/msa-auth/config"
+	"github.com/sanches1984/msa-auth/pkg/redis"
 )
 
 func InitRedis(logger zerolog.Logger) (*redis.Client, error) {

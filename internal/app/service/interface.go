@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"github.com/sanches1984/auth/internal/app/model"
-	storage2 "github.com/sanches1984/auth/internal/pkg/storage"
 	"github.com/sanches1984/gopkg-pg-orm/pager"
+	"github.com/sanches1984/msa-auth/internal/app/model"
+	storage2 "github.com/sanches1984/msa-auth/internal/pkg/storage"
 	uuid "github.com/satori/go.uuid"
 )
 

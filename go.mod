@@ -1,4 +1,4 @@
-module github.com/sanches1984/auth
+module github.com/sanches1984/msa-auth
 
 go 1.16
 

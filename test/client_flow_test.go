@@ -4,7 +4,7 @@ package test
 
 import (
 	"context"
-	auth "github.com/sanches1984/auth/proto/api"
+	auth "github.com/sanches1984/msa-auth/proto/api"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

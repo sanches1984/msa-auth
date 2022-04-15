@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/sanches1984/auth/pkg/jwt"
+	"github.com/sanches1984/msa-auth/pkg/jwt"
 	uuid "github.com/satori/go.uuid"
 )
 
