@@ -26,7 +26,7 @@ func TestClientFlow(t *testing.T) {
 		Password: "passwd123",
 	})
 	require.NoError(t, err)
-	require.NotEmpty(t, user.Id)
+	require.NotEmpty(t, user.UserId)
 
 	// try create the same user
 	_, err = manageService.CreateUser(ctx, &auth.CreateUserRequest{
@@ -97,6 +97,11 @@ func TestClientFlow(t *testing.T) {
 	require.NotEmpty(t, validResp.SessionId)
 	require.NotEmpty(t, []byte("new user data"))
 
+	sessions, err := authService.GetUserSessions(ctx, &auth.GetUserSessionsRequest{Token: newLoginResp.Access.Token})
+	require.NoError(t, err)
+	require.Len(t, sessions.Sessions, 1)
+	require.Equal(t, sessions.Sessions[0].Id, validResp.SessionId)
+
 	// logout
 	_, err = authService.Logout(ctx, &auth.LogoutRequest{Token: newLoginResp.Access.Token})
 	require.NoError(t, err)
@@ -106,12 +111,12 @@ func TestClientFlow(t *testing.T) {
 	require.EqualError(t, err, "rpc error: code = Unauthenticated desc = invalid token")
 
 	// get users list
-	userList, err := manageService.GetUserList(ctx, &auth.GetUserListRequest{Login: "user123"})
+	users, err := manageService.GetUsers(ctx, &auth.GetUsersRequest{Login: "user123"})
 	require.NoError(t, err)
-	require.Len(t, userList.Users, 1)
-	require.Equal(t, userList.Users[0].Login, "user123")
+	require.Len(t, users.Users, 1)
+	require.Equal(t, users.Users[0].Login, "user123")
 
 	// delete user
-	_, err = manageService.DeleteUser(ctx, &auth.DeleteUserRequest{Id: user.Id})
+	_, err = manageService.DeleteUser(ctx, &auth.DeleteUserRequest{UserId: user.UserId})
 	require.NoError(t, err)
 }

@@ -28,6 +28,9 @@ func NewManageService(repo Repository, storage Storage, logger zerolog.Logger) *
 }
 
 func (s *ManageService) CreateUser(ctx context.Context, r *api.CreateUserRequest) (*api.CreateUserResponse, error) {
+	if r.GetLogin() == "" || r.GetPassword() == "" {
+		return nil, convert(errors.ErrBadRequest)
+	}
 	user := &model.User{Login: r.GetLogin()}
 	if err := user.SetHashByPassword(r.GetPassword()); err != nil {
 		s.logger.Error().Err(err).Str("login", r.GetLogin()).Msg("can't set password hash")
@@ -40,22 +43,25 @@ func (s *ManageService) CreateUser(ctx context.Context, r *api.CreateUserRequest
 	}
 
 	s.logger.Info().Int64("user_id", user.ID).Msg("created new user")
-	return &api.CreateUserResponse{Id: user.ID}, nil
+	return &api.CreateUserResponse{UserId: user.ID}, nil
 }
 
 func (s *ManageService) DeleteUser(ctx context.Context, r *api.DeleteUserRequest) (*api.DeleteUserResponse, error) {
-	user, err := s.repo.GetUser(ctx, model.UserFilter{ID: r.GetId()})
+	if r.GetUserId() == 0 {
+		return nil, convert(errors.ErrBadRequest)
+	}
+	user, err := s.repo.GetUser(ctx, model.UserFilter{ID: r.GetUserId()})
 	if err != nil {
-		s.logger.Error().Err(err).Int64("user_id", r.GetId()).Msg("can't get user by id")
+		s.logger.Error().Err(err).Int64("user_id", r.GetUserId()).Msg("can't get user by id")
 		return nil, convert(err)
 	} else if user == nil {
-		s.logger.Info().Int64("user_id", r.GetId()).Msg("user not found")
+		s.logger.Info().Int64("user_id", r.GetUserId()).Msg("user not found")
 		return nil, convert(errors.ErrUserNotFound)
 	}
 
-	tokens, err := s.repo.GetRefreshTokens(ctx, model.RefreshTokenFilter{UserID: r.GetId()})
+	tokens, err := s.repo.GetRefreshTokens(ctx, model.RefreshTokenFilter{UserID: r.GetUserId()})
 	if err != nil {
-		s.logger.Error().Err(err).Int64("user_id", r.GetId()).Msg("can't get refresh token list")
+		s.logger.Error().Err(err).Int64("user_id", r.GetUserId()).Msg("can't get refresh token list")
 		return nil, convert(err)
 	}
 
@@ -67,16 +73,16 @@ func (s *ManageService) DeleteUser(ctx context.Context, r *api.DeleteUserRequest
 		})
 	}
 	if err := eg.Wait(); err != nil {
-		s.logger.Error().Err(err).Int64("user_id", r.GetId()).Msg("can't delete session")
+		s.logger.Error().Err(err).Int64("user_id", r.GetUserId()).Msg("can't delete session")
 		return nil, convert(err)
 	}
 
-	if err := s.repo.DeleteRefreshToken(ctx, model.RefreshTokenFilter{UserID: r.GetId()}); err != nil {
-		s.logger.Error().Err(err).Int64("user_id", r.GetId()).Msg("can't delete refresh token")
+	if err := s.repo.DeleteRefreshToken(ctx, model.RefreshTokenFilter{UserID: r.GetUserId()}); err != nil {
+		s.logger.Error().Err(err).Int64("user_id", r.GetUserId()).Msg("can't delete refresh token")
 		return nil, convert(err)
 	}
 	if err := s.repo.DeleteUser(ctx, user); err != nil {
-		s.logger.Error().Err(err).Int64("user_id", r.GetId()).Msg("can't delete user")
+		s.logger.Error().Err(err).Int64("user_id", r.GetUserId()).Msg("can't delete user")
 		return nil, convert(err)
 	}
 
@@ -84,13 +90,13 @@ func (s *ManageService) DeleteUser(ctx context.Context, r *api.DeleteUserRequest
 	return &api.DeleteUserResponse{SessionId: tokens.Sessions()}, nil
 }
 
-func (s *ManageService) GetUserList(ctx context.Context, r *api.GetUserListRequest) (*api.GetUserListResponse, error) {
+func (s *ManageService) GetUsers(ctx context.Context, r *api.GetUsersRequest) (*api.GetUsersResponse, error) {
 	filter := model.UserFilter{
-		ID:    r.Id,
-		Login: r.Login,
-		Order: model.UserOrder(int(r.Order)),
+		ID:    r.GetUserId(),
+		Login: r.GetLogin(),
+		Order: model.UserOrder(int(r.GetOrder())),
 	}
-	pgr := pager.NewPagerWithPageSize(r.Page, r.PageSize)
+	pgr := pager.NewPagerWithPageSize(r.GetPage(), r.GetPageSize())
 
 	users, err := s.repo.GetUsers(ctx, filter, pgr)
 	if err != nil {
@@ -113,5 +119,5 @@ func (s *ManageService) GetUserList(ctx context.Context, r *api.GetUserListReque
 	}
 
 	s.logger.Info().Int("count", len(userList)).Msg("get user list")
-	return &api.GetUserListResponse{Users: userList}, nil
+	return &api.GetUsersResponse{Users: userList}, nil
 }

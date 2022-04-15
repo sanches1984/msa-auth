@@ -57,7 +57,7 @@ func newGRPCError(err error, code codes.Code) grpcError {
 }
 
 func (e grpcError) Error() string {
-	return e.Error()
+	return e.err.Error()
 }
 
 func (e grpcError) GRPCStatus() *status.Status {

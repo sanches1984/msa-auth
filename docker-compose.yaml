@@ -1,12 +1,25 @@
 version: "3"
 services:
-  db:
+  auth:
+    image: auth-app
+    container_name: auth-app
+    ports:
+      - 5000:5000
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      GOPATH: '/go'
+  postgres:
     image: postgres:11
     container_name: auth-postgres
     ports:
       - 8111:5432
     volumes:
-      - dbdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: password
@@ -16,7 +29,9 @@ services:
     container_name: auth-redis
     ports:
       - 8112:6379
-    environment:
-      REDIS_PASSWORD: password
+    command: redis-server --requirepass password
+    volumes:
+      - redis_data:/data
 volumes:
-  dbdata:
+  postgres_data:
+  redis_data:

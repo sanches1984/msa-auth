@@ -9,7 +9,7 @@ import (
 func TestRedis(t *testing.T) {
 	client, err := NewClient(Config{
 		Host:              "localhost:8112",
-		Password:          "",
+		Password:          "password",
 		Db:                0,
 		ConnectionTimeout: 10 * time.Second,
 		OperationTimeout:  5 * time.Second,
@@ -35,9 +35,9 @@ func TestRedis(t *testing.T) {
 	require.EqualError(t, err, ErrRecordNotFound.Error())
 	require.Nil(t, data)
 
-	err = client.Set("my_key", nil)
+	err = client.Set("my_key1", nil)
 	require.NoError(t, err)
 
-	_, err = client.Get("my_key")
+	_, err = client.Get("my_key1")
 	require.NoError(t, err)
 }

@@ -10,7 +10,7 @@ import (
 )
 
 type Repository struct {
-	db *dao.DAO
+	db ORM
 }
 
 func New() *Repository {

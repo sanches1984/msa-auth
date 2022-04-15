@@ -16,6 +16,8 @@ import (
 	database "github.com/sanches1984/gopkg-pg-orm"
 	dbmw "github.com/sanches1984/gopkg-pg-orm/middleware"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"net"
 	"os"
 	"os/signal"
@@ -65,6 +67,7 @@ func New(logger zerolog.Logger) (*App, error) {
 		),
 	)
 
+	grpc_health_v1.RegisterHealthServer(app.grpc, health.NewServer())
 	api.RegisterAuthServiceServer(app.grpc, service.NewAuthService(app.repo, app.storage, app.logger))
 	api.RegisterManageServiceServer(app.grpc, service.NewManageService(app.repo, app.storage, app.logger))
 	app.metrics.Initialize(app.grpc)

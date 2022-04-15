@@ -96,15 +96,15 @@ func (c *Client) do(commandName string, args ...interface{}) (interface{}, error
 	if c.conn == nil {
 		return nil, fmt.Errorf("redis disconnected")
 	}
-	firstAttemp := true
+	firstAttempt := true
 	c.Lock()
 TryAgain:
 	reply, err := (*c.conn).Do(commandName, args...)
-	if firstAttemp && err != nil {
+	if firstAttempt && err != nil {
 		if _, ok := err.(*net.OpError); ok {
 			err = c.doReconnect()
 			if err == nil {
-				firstAttemp = false
+				firstAttempt = false
 				goto TryAgain
 			}
 		}

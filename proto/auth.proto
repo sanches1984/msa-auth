@@ -9,12 +9,13 @@ service AuthService {
     rpc NewAccessTokenByRefreshToken (NewAccessTokenByRefreshTokenRequest) returns (TokenResponse) {}
     rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse) {}
     rpc UpdateSessionData (UpdateSessionDataRequest) returns (UpdateSessionDataResponse) {}
+    rpc GetUserSessions (GetUserSessionsRequest) returns (GetUserSessionsResponse) {}
 }
 
 service ManageService {
     rpc CreateUser (CreateUserRequest) returns (CreateUserResponse) {}
     rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse) {}
-    rpc GetUserList (GetUserListRequest) returns (GetUserListResponse) {}
+    rpc GetUsers (GetUsersRequest) returns (GetUsersResponse) {}
 }
 
 message ChangePasswordRequest {
@@ -74,33 +75,41 @@ message CreateUserRequest {
 }
 
 message CreateUserResponse {
-    int64 id = 1;
+    int64 user_id = 1;
 }
 
 message DeleteUserRequest {
-    int64 id = 1;
+    int64 user_id = 1;
 }
 
 message DeleteUserResponse {
     repeated string session_id = 1;
 }
 
-message GetUserListRequest {
+message GetUsersRequest {
     enum Order {
         CREATED_ASC = 0;
         CREATED_DESC = 1;
         LOGIN_ASC = 2;
         LOGIN_DESC = 3;
     }
-    int64 id = 1;
+    int64 user_id = 1;
     string login = 2;
     Order order = 3;
     int32 page = 4;
     int32 page_size = 5;
 }
 
-message GetUserListResponse {
+message GetUsersResponse {
     repeated User users = 1;
+}
+
+message GetUserSessionsRequest {
+    string token = 1;
+}
+
+message GetUserSessionsResponse {
+    repeated Session sessions = 1;
 }
 
 message Token {
@@ -114,4 +123,9 @@ message User {
     string created = 3;
     string updated = 4;
     string deleted = 5;
+}
+
+message Session {
+    string id = 1;
+    string created = 2;
 }
