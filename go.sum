@@ -761,6 +761,8 @@ github.com/russross/blackfriday/v2 v2.0.1/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQD
 github.com/ryanuber/columnize v0.0.0-20160712163229-9b3edd62028f/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=
 github.com/safchain/ethtool v0.0.0-20190326074333-42ed695e3de8/go.mod h1:Z0q5wiBQGYcxhMZ6gUqHn6pYNLypFAvaL3UvgZLR0U4=
 github.com/safchain/ethtool v0.0.0-20210803160452-9aa261dae9b1/go.mod h1:Z0q5wiBQGYcxhMZ6gUqHn6pYNLypFAvaL3UvgZLR0U4=
+github.com/sanches1984/gopkg-logger v0.0.6 h1:yDCqgw6MnX4L/6ujtVXx6Jbmyhq6n5xidgW7t1HT2B8=
+github.com/sanches1984/gopkg-logger v0.0.6/go.mod h1:TToh8R1Caw0e511faIcCUyL+j5MUu67YevIv7V4j0tM=
 github.com/sanches1984/gopkg-pg-orm v0.0.2 h1:HJZHbmF1C45Sb2kyfdIx8UvfZBNsFeV3FL77sC7FEvs=
 github.com/sanches1984/gopkg-pg-orm v0.0.2/go.mod h1:4G7X+ru+87aO+31sLcj7w73FDwqJZwrUoVkEwe4J1l8=
 github.com/satori/go.uuid v1.2.0 h1:0uYX9dsZ2yD7q2RtLRtPSdGDWzjeM3TbMJP9utgA0ww=

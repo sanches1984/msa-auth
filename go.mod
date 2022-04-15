@@ -13,6 +13,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/prometheus/client_golang v1.11.0
 	github.com/rs/zerolog v1.26.1
+	github.com/sanches1984/gopkg-logger v0.0.6
 	github.com/sanches1984/gopkg-pg-orm v0.0.2
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.7.0

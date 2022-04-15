@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/sanches1984/gopkg-logger"
 	"time"
 )
 
@@ -27,8 +28,8 @@ type Environment struct {
 	AccessTTL      time.Duration `envconfig:"ACCESS_TTL"      default:"6h"`
 	RefreshTTL     time.Duration `envconfig:"REFRESH_TTL"     default:"24h"`
 	MetricsHost    string        `envconfig:"METRICS_HOST"    default:"localhost:8080"`
-	LogType        string        `envconfig:"LOG_TYPE"        default:"console"`
-	LogLevel       string        `envconfig:"LOG_LEVEL"       default:"info"`
+	LogType        log.Type      `envconfig:"LOG_TYPE"        default:"console"`
+	LogLevel       log.Level     `envconfig:"LOG_LEVEL"       default:"info"`
 }
 
 func Load() error {

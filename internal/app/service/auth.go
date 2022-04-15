@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"github.com/rs/zerolog"
+	log "github.com/sanches1984/gopkg-logger"
 	"github.com/sanches1984/msa-auth/internal/app/model"
 	"github.com/sanches1984/msa-auth/pkg/errors"
 	"github.com/sanches1984/msa-auth/pkg/redis"
@@ -32,10 +33,10 @@ func (s *AuthService) Login(ctx context.Context, r *api.LoginRequest) (*api.Toke
 	}
 	user, err := s.repo.GetUser(ctx, model.UserFilter{Login: r.GetLogin()})
 	if err != nil {
-		s.logger.Error().Err(err).Str("login", r.GetLogin()).Msg("can't get user by login")
+		log.WithContext(ctx, s.logger).Error().Err(err).Str("login", r.GetLogin()).Msg("can't get user by login")
 		return nil, convert(err)
 	} else if user == nil {
-		s.logger.Info().Str("login", r.GetLogin()).Msg("user not found")
+		log.WithContext(ctx, s.logger).Info().Str("login", r.GetLogin()).Msg("user not found")
 		return nil, convert(errors.ErrUserNotFound)
 	}
 
@@ -45,7 +46,7 @@ func (s *AuthService) Login(ctx context.Context, r *api.LoginRequest) (*api.Toke
 
 	session, err := s.storage.CreateSession(user.ID, r.GetData())
 	if err != nil {
-		s.logger.Error().Err(err).Str("login", r.GetLogin()).Msg("can't create session")
+		log.WithContext(ctx, s.logger).Error().Err(err).Str("login", r.GetLogin()).Msg("can't create session")
 		return nil, convert(err)
 	}
 
@@ -56,7 +57,7 @@ func (s *AuthService) Login(ctx context.Context, r *api.LoginRequest) (*api.Toke
 		ExpiresIn: session.Refresh.ExpiresIn,
 	}); err != nil {
 		_ = s.storage.DeleteSession(session.Access.Value)
-		s.logger.Error().Err(err).Str("login", r.GetLogin()).Msg("can't create refresh token")
+		log.WithContext(ctx, s.logger).Error().Err(err).Str("login", r.GetLogin()).Msg("can't create refresh token")
 		return nil, convert(err)
 	}
 
@@ -80,21 +81,21 @@ func (s *AuthService) Logout(ctx context.Context, r *api.LogoutRequest) (*api.Lo
 	}
 	userID, sessionID, err := s.storage.DecodeToken(r.GetToken())
 	if err != nil {
-		s.logger.Error().Err(err).Msg("can't get session")
+		log.WithContext(ctx, s.logger).Error().Err(err).Msg("can't get session")
 		return nil, convert(err)
 	}
 
 	if err := s.storage.DeleteSession(r.GetToken()); err != nil {
-		s.logger.Error().Err(err).Msg("can't delete session")
+		log.WithContext(ctx, s.logger).Error().Err(err).Msg("can't delete session")
 		return nil, convert(err)
 	}
 
 	if err := s.repo.DeleteRefreshToken(ctx, model.RefreshTokenFilter{UserID: userID, SessionID: sessionID}); err != nil {
-		s.logger.Error().Err(err).Msg("can't delete refresh token")
+		log.WithContext(ctx, s.logger).Error().Err(err).Msg("can't delete refresh token")
 		return nil, convert(err)
 	}
 
-	s.logger.Info().Int64("user_id", userID).Msg("logout")
+	log.WithContext(ctx, s.logger).Info().Int64("user_id", userID).Msg("logout")
 	return &api.LogoutResponse{SessionId: sessionID.String()}, nil
 }
 
@@ -104,42 +105,42 @@ func (s *AuthService) ChangePassword(ctx context.Context, r *api.ChangePasswordR
 	}
 	userID, _, err := s.storage.DecodeToken(r.GetToken())
 	if err != nil {
-		s.logger.Error().Err(err).Msg("can't decode token")
+		log.WithContext(ctx, s.logger).Error().Err(err).Msg("can't decode token")
 		return nil, convert(err)
 	}
 
 	_, err = s.storage.GetSessionData(r.GetToken())
 	if err != nil {
 		if err == redis.ErrRecordNotFound {
-			s.logger.Info().Int64("user_id", userID).Msg("session not found")
+			log.WithContext(ctx, s.logger).Info().Int64("user_id", userID).Msg("session not found")
 			return nil, convert(errors.ErrSessionNotFound)
 		}
-		s.logger.Error().Err(err).Int64("user_id", userID).Msg("can't get session data")
+		log.WithContext(ctx, s.logger).Error().Err(err).Int64("user_id", userID).Msg("can't get session data")
 		return nil, convert(err)
 	}
 
 	user, err := s.repo.GetUser(ctx, model.UserFilter{ID: userID})
 	if err != nil {
-		s.logger.Error().Err(err).Int64("user_id", userID).Msg("can't get user by id")
+		log.WithContext(ctx, s.logger).Error().Err(err).Int64("user_id", userID).Msg("can't get user by id")
 		return nil, err
 	} else if user == nil {
-		s.logger.Info().Int64("user_id", userID).Msg("user not found")
+		log.WithContext(ctx, s.logger).Info().Int64("user_id", userID).Msg("user not found")
 		return nil, convert(errors.ErrUserNotFound)
 	}
 
 	err = user.SetHashByPassword(r.GetNewPassword())
 	if err != nil {
-		s.logger.Error().Err(err).Int64("user_id", userID).Msg("can't set password hash")
+		log.WithContext(ctx, s.logger).Error().Err(err).Int64("user_id", userID).Msg("can't set password hash")
 		return nil, convert(err)
 	}
 
 	err = s.repo.UpdateUserPassword(ctx, user)
 	if err != nil {
-		s.logger.Error().Err(err).Int64("user_id", userID).Msg("can't change user password")
+		log.WithContext(ctx, s.logger).Error().Err(err).Int64("user_id", userID).Msg("can't change user password")
 		return nil, convert(err)
 	}
 
-	s.logger.Info().Int64("user_id", userID).Msg("password changed")
+	log.WithContext(ctx, s.logger).Info().Int64("user_id", userID).Msg("password changed")
 	return &api.ChangePasswordResponse{Changed: true}, nil
 }
 
@@ -149,43 +150,43 @@ func (s *AuthService) NewAccessTokenByRefreshToken(ctx context.Context, r *api.N
 	}
 	userID, sessionID, err := s.storage.DecodeToken(r.GetRefreshToken())
 	if err != nil {
-		s.logger.Error().Err(err).Msg("can't decode token")
+		log.WithContext(ctx, s.logger).Error().Err(err).Msg("can't decode token")
 		return nil, convert(err)
 	}
 
 	refreshToken, err := s.repo.GetRefreshToken(ctx, model.RefreshTokenFilter{UserID: userID, SessionID: sessionID})
 	if err != nil {
-		s.logger.Error().Err(err).Int64("user_id", userID).Msg("can't get refresh token")
+		log.WithContext(ctx, s.logger).Error().Err(err).Int64("user_id", userID).Msg("can't get refresh token")
 		return nil, convert(err)
 	} else if refreshToken == nil {
-		s.logger.Warn().Int64("user_id", userID).Msg("refresh token not found")
+		log.WithContext(ctx, s.logger).Warn().Int64("user_id", userID).Msg("refresh token not found")
 		return nil, convert(errors.ErrBadRequest)
 	} else if refreshToken.Token != r.GetRefreshToken() {
 		return nil, convert(errors.ErrTokenInvalid)
 	} else if refreshToken.IsExpired() {
-		s.logger.Warn().Int64("user_id", userID).Msg("refresh token has expired")
+		log.WithContext(ctx, s.logger).Warn().Int64("user_id", userID).Msg("refresh token has expired")
 		return nil, convert(errors.ErrTokenExpired)
 	}
 
 	sessionData, err := s.storage.GetSessionDataByUUID(sessionID)
 	if err != nil {
-		s.logger.Warn().Err(err).Int64("user_id", userID).Msg("can't get session data")
+		log.WithContext(ctx, s.logger).Warn().Err(err).Int64("user_id", userID).Msg("can't get session data")
 	}
 
 	session, err := s.storage.RefreshSession(userID, sessionID, sessionData)
 	if err != nil {
-		s.logger.Error().Err(err).Int64("user_id", userID).Msg("can't refresh session")
+		log.WithContext(ctx, s.logger).Error().Err(err).Int64("user_id", userID).Msg("can't refresh session")
 		return nil, convert(err)
 	}
 
 	refreshToken.Token = session.Refresh.Value
 	refreshToken.ExpiresIn = session.Refresh.ExpiresIn
 	if err := s.repo.UpdateRefreshToken(ctx, refreshToken); err != nil {
-		s.logger.Error().Err(err).Int64("user_id", userID).Msg("can't update refresh token")
+		log.WithContext(ctx, s.logger).Error().Err(err).Int64("user_id", userID).Msg("can't update refresh token")
 		return nil, convert(err)
 	}
 
-	s.logger.Info().Int64("user_id", userID).Msg("created new access token by refresh token")
+	log.WithContext(ctx, s.logger).Info().Int64("user_id", userID).Msg("created new access token by refresh token")
 	return &api.TokenResponse{
 		SessionId: sessionID.String(),
 		Access: &api.Token{
@@ -209,19 +210,19 @@ func (s *AuthService) ValidateToken(ctx context.Context, r *api.ValidateTokenReq
 	}
 	sessionData, err := s.storage.GetSessionData(r.GetToken())
 	if err != nil {
-		s.logger.Warn().Err(err).Int64("user_id", userID).Msg("can't get session data")
+		log.WithContext(ctx, s.logger).Warn().Err(err).Int64("user_id", userID).Msg("can't get session data")
 		return nil, convert(errors.ErrTokenInvalid)
 	}
 
 	user, err := s.repo.GetUser(ctx, model.UserFilter{ID: userID})
 	if err != nil {
-		s.logger.Error().Err(err).Int64("user_id", userID).Msg("can't get user by id")
+		log.WithContext(ctx, s.logger).Error().Err(err).Int64("user_id", userID).Msg("can't get user by id")
 		return nil, err
 	} else if user == nil {
 		return nil, convert(errors.ErrTokenInvalid)
 	}
 
-	s.logger.Info().Int64("user_id", userID).Msg("validate token")
+	log.WithContext(ctx, s.logger).Info().Int64("user_id", userID).Msg("validate token")
 	return &api.ValidateTokenResponse{
 		UserId:    userID,
 		SessionId: sessionID.String(),
@@ -235,11 +236,11 @@ func (s *AuthService) UpdateSessionData(ctx context.Context, r *api.UpdateSessio
 	}
 	err := s.storage.UpdateSessionData(r.GetToken(), r.GetData())
 	if err != nil {
-		s.logger.Error().Err(err).Msg("can't update session data")
+		log.WithContext(ctx, s.logger).Error().Err(err).Msg("can't update session data")
 		return nil, convert(err)
 	}
 
-	s.logger.Info().Msg("update session data")
+	log.WithContext(ctx, s.logger).Info().Msg("update session data")
 	return &api.UpdateSessionDataResponse{Updated: true}, nil
 }
 
@@ -250,13 +251,13 @@ func (s *AuthService) GetUserSessions(ctx context.Context, r *api.GetUserSession
 
 	userID, _, err := s.storage.DecodeToken(r.GetToken())
 	if err != nil {
-		s.logger.Error().Err(err).Msg("can't decode token")
+		log.WithContext(ctx, s.logger).Error().Err(err).Msg("can't decode token")
 		return nil, convert(err)
 	}
 
 	refreshTokens, err := s.repo.GetRefreshTokens(ctx, model.RefreshTokenFilter{UserID: userID})
 	if err != nil {
-		s.logger.Error().Err(err).Int64("user_id", userID).Msg("can't get refresh token")
+		log.WithContext(ctx, s.logger).Error().Err(err).Int64("user_id", userID).Msg("can't get refresh token")
 		return nil, convert(err)
 	}
 

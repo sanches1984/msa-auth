@@ -4,6 +4,7 @@ import (
 	"fmt"
 	grpcmw "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/rs/zerolog"
+	log "github.com/sanches1984/gopkg-logger"
 	database "github.com/sanches1984/gopkg-pg-orm"
 	dbmw "github.com/sanches1984/gopkg-pg-orm/middleware"
 	"github.com/sanches1984/msa-auth/config"
@@ -26,6 +27,7 @@ import (
 )
 
 const gracefulTimeout = 2 * time.Second
+const logDBLongQueryDuration = 1 * time.Second
 
 type App struct {
 	grpc    *grpc.Server
@@ -60,9 +62,10 @@ func New(logger zerolog.Logger) (*App, error) {
 	app.grpc = grpc.NewServer(
 		grpc.UnaryInterceptor(
 			grpcmw.ChainUnaryServer(
-				dbmw.NewDBServerInterceptor(app.db, database.WithLogger(logger, time.Second)),
+				dbmw.NewDBServerInterceptor(app.db, database.WithLogger(logger, logDBLongQueryDuration)),
 				app.metrics.AppMetricsInterceptor(),
 				app.metrics.GRPCMetricsInterceptor(),
+				log.NewLogServerInterceptor(logger),
 			),
 		),
 	)

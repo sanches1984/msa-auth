@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"github.com/rs/zerolog"
+	log "github.com/sanches1984/gopkg-logger"
 	"github.com/sanches1984/gopkg-pg-orm/pager"
 	"github.com/sanches1984/msa-auth/internal/app/model"
 	"github.com/sanches1984/msa-auth/pkg/errors"
@@ -33,16 +34,16 @@ func (s *ManageService) CreateUser(ctx context.Context, r *api.CreateUserRequest
 	}
 	user := &model.User{Login: r.GetLogin()}
 	if err := user.SetHashByPassword(r.GetPassword()); err != nil {
-		s.logger.Error().Err(err).Str("login", r.GetLogin()).Msg("can't set password hash")
+		log.WithContext(ctx, s.logger).Error().Err(err).Str("login", r.GetLogin()).Msg("can't set password hash")
 		return nil, convert(err)
 	}
 
 	if err := s.repo.CreateUser(ctx, user); err != nil {
-		s.logger.Error().Err(err).Str("login", r.GetLogin()).Msg("can't create user")
+		log.WithContext(ctx, s.logger).Error().Err(err).Str("login", r.GetLogin()).Msg("can't create user")
 		return nil, convert(err)
 	}
 
-	s.logger.Info().Int64("user_id", user.ID).Msg("created new user")
+	log.WithContext(ctx, s.logger).Info().Int64("user_id", user.ID).Msg("created new user")
 	return &api.CreateUserResponse{UserId: user.ID}, nil
 }
 
@@ -52,16 +53,16 @@ func (s *ManageService) DeleteUser(ctx context.Context, r *api.DeleteUserRequest
 	}
 	user, err := s.repo.GetUser(ctx, model.UserFilter{ID: r.GetUserId()})
 	if err != nil {
-		s.logger.Error().Err(err).Int64("user_id", r.GetUserId()).Msg("can't get user by id")
+		log.WithContext(ctx, s.logger).Error().Err(err).Int64("user_id", r.GetUserId()).Msg("can't get user by id")
 		return nil, convert(err)
 	} else if user == nil {
-		s.logger.Info().Int64("user_id", r.GetUserId()).Msg("user not found")
+		log.WithContext(ctx, s.logger).Info().Int64("user_id", r.GetUserId()).Msg("user not found")
 		return nil, convert(errors.ErrUserNotFound)
 	}
 
 	tokens, err := s.repo.GetRefreshTokens(ctx, model.RefreshTokenFilter{UserID: r.GetUserId()})
 	if err != nil {
-		s.logger.Error().Err(err).Int64("user_id", r.GetUserId()).Msg("can't get refresh token list")
+		log.WithContext(ctx, s.logger).Error().Err(err).Int64("user_id", r.GetUserId()).Msg("can't get refresh token list")
 		return nil, convert(err)
 	}
 
@@ -73,20 +74,20 @@ func (s *ManageService) DeleteUser(ctx context.Context, r *api.DeleteUserRequest
 		})
 	}
 	if err := eg.Wait(); err != nil {
-		s.logger.Error().Err(err).Int64("user_id", r.GetUserId()).Msg("can't delete session")
+		log.WithContext(ctx, s.logger).Error().Err(err).Int64("user_id", r.GetUserId()).Msg("can't delete session")
 		return nil, convert(err)
 	}
 
 	if err := s.repo.DeleteRefreshToken(ctx, model.RefreshTokenFilter{UserID: r.GetUserId()}); err != nil {
-		s.logger.Error().Err(err).Int64("user_id", r.GetUserId()).Msg("can't delete refresh token")
+		log.WithContext(ctx, s.logger).Error().Err(err).Int64("user_id", r.GetUserId()).Msg("can't delete refresh token")
 		return nil, convert(err)
 	}
 	if err := s.repo.DeleteUser(ctx, user); err != nil {
-		s.logger.Error().Err(err).Int64("user_id", r.GetUserId()).Msg("can't delete user")
+		log.WithContext(ctx, s.logger).Error().Err(err).Int64("user_id", r.GetUserId()).Msg("can't delete user")
 		return nil, convert(err)
 	}
 
-	s.logger.Info().Int64("user_id", user.ID).Msg("deleted user")
+	log.WithContext(ctx, s.logger).Info().Int64("user_id", user.ID).Msg("deleted user")
 	return &api.DeleteUserResponse{SessionId: tokens.Sessions()}, nil
 }
 
@@ -100,7 +101,7 @@ func (s *ManageService) GetUsers(ctx context.Context, r *api.GetUsersRequest) (*
 
 	users, err := s.repo.GetUsers(ctx, filter, pgr)
 	if err != nil {
-		s.logger.Error().Err(err).Msg("can't get user list")
+		log.WithContext(ctx, s.logger).Error().Err(err).Msg("can't get user list")
 		return nil, convert(err)
 	}
 
@@ -118,6 +119,6 @@ func (s *ManageService) GetUsers(ctx context.Context, r *api.GetUsersRequest) (*
 		userList = append(userList, user)
 	}
 
-	s.logger.Info().Int("count", len(userList)).Msg("get user list")
+	log.WithContext(ctx, s.logger).Info().Int("count", len(userList)).Msg("get user list")
 	return &api.GetUsersResponse{Users: userList}, nil
 }

@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/sanches1984/gopkg-logger"
 	"github.com/sanches1984/msa-auth/config"
 	"github.com/sanches1984/msa-auth/internal/app"
-	"github.com/sanches1984/msa-auth/internal/app/resources"
 	syslog "log"
 )
 
@@ -12,7 +12,8 @@ func main() {
 		syslog.Fatalln("load config error:", err)
 	}
 
-	logger := resources.InitLogger()
+	log.Init(config.Env().LogType, config.Env().LogLevel)
+	logger := log.For(config.Env().AppName)
 
 	application, err := app.New(logger)
 	if err != nil {
