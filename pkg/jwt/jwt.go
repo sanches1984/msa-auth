@@ -2,17 +2,19 @@ package jwt
 
 import (
 	"errors"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	uuid "github.com/satori/go.uuid"
+	"strconv"
 	"time"
 )
 
 var ErrInvalidToken = errors.New("invalid token")
+var ErrEmptyToken = errors.New("token or claims is null")
 
 type userJwt struct {
 	UserID    int64     `json:"u"`
 	SessionID uuid.UUID `json:"s"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 type Token struct {
@@ -43,7 +45,7 @@ func (s *Service) NewRefreshToken(userID int64, sessionID uuid.UUID) (Token, err
 }
 
 func (s *Service) ParseToken(token string) (int64, uuid.UUID, error) {
-	jwtToken, err := jwt.ParseWithClaims(token, &userJwt{}, func(token *jwt.Token) (interface{}, error) {
+	jwtToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("can't decode jwt token")
 		}
@@ -55,28 +57,40 @@ func (s *Service) ParseToken(token string) (int64, uuid.UUID, error) {
 	}
 
 	if jwtToken == nil || jwtToken.Claims == nil {
-		return 0, uuid.Nil, errors.New("token or claims is null")
-	}
-
-	authJwt, ok := jwtToken.Claims.(*userJwt)
-	if !ok || !jwtToken.Valid {
+		return 0, uuid.Nil, ErrEmptyToken
+	} else if !jwtToken.Valid {
+		return 0, uuid.Nil, ErrInvalidToken
+	} else if err := jwtToken.Claims.Valid(); err != nil {
 		return 0, uuid.Nil, ErrInvalidToken
 	}
 
-	return authJwt.UserID, authJwt.SessionID, nil
+	mc, ok := jwtToken.Claims.(jwt.MapClaims)
+	if !ok {
+		return 0, uuid.Nil, ErrEmptyToken
+	}
+
+	userID, err := strconv.ParseInt(mc["jti"].(string), 10, 64)
+	if err != nil {
+		return 0, uuid.Nil, ErrEmptyToken
+	}
+
+	sessionID, err := uuid.FromString(mc["sub"].(string))
+	if err != nil {
+		return 0, uuid.Nil, ErrEmptyToken
+	}
+
+	return userID, sessionID, nil
 }
 
 func (s *Service) newToken(userID int64, sessionID uuid.UUID, ttl time.Duration) (Token, error) {
 	now := time.Now()
-	object := &userJwt{
-		UserID:    userID,
-		SessionID: sessionID,
-		StandardClaims: jwt.StandardClaims{
-			IssuedAt:  now.UTC().Unix(),
-			ExpiresAt: now.Add(ttl).UTC().Unix(),
-		},
+	claims := jwt.RegisteredClaims{
+		ID:        strconv.FormatInt(userID, 10),
+		Subject:   sessionID.String(),
+		IssuedAt:  &jwt.NumericDate{Time: now},
+		ExpiresAt: &jwt.NumericDate{Time: now.Add(ttl)},
 	}
-	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, object)
+	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	token, err := jwtToken.SignedString(s.secret)
 	if err != nil {
 		return Token{}, err
@@ -84,6 +98,6 @@ func (s *Service) newToken(userID int64, sessionID uuid.UUID, ttl time.Duration)
 
 	return Token{
 		Value:     token,
-		ExpiresAt: int32(object.StandardClaims.ExpiresAt),
+		ExpiresAt: int32(claims.ExpiresAt.Unix()),
 	}, nil
 }

@@ -34,7 +34,7 @@ func TestJWT_Expired(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	_, _, err = jwt.ParseToken(token.Value)
-	require.EqualError(t, err, "token is expired by 1s")
+	require.EqualError(t, err, "Token is expired")
 }
 
 func TestJWTNew(t *testing.T) {
